@@ -1,3 +1,6 @@
+main: xyz.michaelzhao.mikeymcplus.MikeyMcPlus
 name: MikeyMcPlus
-version: 0.0.1-SNAPSHOT
-main: xyz.michaelzhao.MikeyMcPlus.MikeyMcPlus
+version: 0.0.2-SNAPSHOT
+author: Michael Zhao
+description: My first mc plugin!
+api-version: 1.15.2-R0.1-SNAPSHOT

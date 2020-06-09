@@ -1,4 +1,4 @@
-package xyz.michaelzhao;
+package xyz.michaelzhao.mikeymcplus;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
