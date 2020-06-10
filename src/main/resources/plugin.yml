@@ -8,3 +8,6 @@ commands:
   firework:
     description: Firework generator!
     usage: /firework
+  gaystick:
+    description: Gives you a powerful stick!
+    usage: /gaystick <knockback level>

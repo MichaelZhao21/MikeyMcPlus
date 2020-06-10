@@ -10,6 +10,7 @@ public class MikeyMcPlus extends JavaPlugin {
         super.onEnable();
         instance = this;
         this.getCommand("firework").setExecutor(new CommandFirework());
+        this.getCommand("gaystick").setExecutor(new CommandGayStick());
         getLogger().info("Mikey is here!!!!!!!");
     }
 
