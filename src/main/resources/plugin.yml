@@ -1,6 +1,10 @@
 main: xyz.michaelzhao.mikeymcplus.MikeyMcPlus
 name: MikeyMcPlus
-version: 0.0.2-SNAPSHOT
+version: 0.0.3-SNAPSHOT
 author: Michael Zhao
 description: My first mc plugin!
-api-version: 1.15.2-R0.1-SNAPSHOT
+
+commands:
+  firework:
+    description: Firework generator!
+    usage: /firework
