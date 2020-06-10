@@ -1,5 +1,5 @@
-main: xyz.michaelzhao.mikeymcplus.MikeyMcPlus
 name: MikeyMcPlus
+main: xyz.michaelzhao.mikeymcplus.MikeyMcPlus
 version: 0.0.3-SNAPSHOT
 author: Michael Zhao
 description: My first mc plugin!
@@ -11,3 +11,6 @@ commands:
   gaystick:
     description: Gives you a powerful stick!
     usage: /gaystick <knockback level>
+  games:
+    description: A minigame engine
+    usage: /games [tool]

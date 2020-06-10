@@ -7,9 +7,19 @@
       <option name="url" value="https://repo.maven.apache.org/maven2" />
     </remote-repository>
     <remote-repository>
+      <option name="id" value="enginehub-maven" />
+      <option name="name" value="enginehub-maven" />
+      <option name="url" value="http://maven.enginehub.org/repo/" />
+    </remote-repository>
+    <remote-repository>
       <option name="id" value="spigotmc-repo" />
       <option name="name" value="spigotmc-repo" />
       <option name="url" value="https://hub.spigotmc.org/nexus/content/repositories/snapshots/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="bukkit-repo" />
+      <option name="name" value="bukkit-repo" />
+      <option name="url" value="http://repo.bukkit.org/content/groups/public/" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="central" />
