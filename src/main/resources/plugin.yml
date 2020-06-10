@@ -5,12 +5,9 @@ author: Michael Zhao
 description: My first mc plugin!
 
 commands:
-  firework:
-    description: Firework generator!
-    usage: /firework
-  gaystick:
-    description: Gives you a powerful stick!
-    usage: /gaystick <knockback level>
+  fun:
+    description: Fun little commands (like gaystick and firework)
+    usage: /fun <firework | gaystick>
   games:
     description: A minigame engine
     usage: /games [tool]

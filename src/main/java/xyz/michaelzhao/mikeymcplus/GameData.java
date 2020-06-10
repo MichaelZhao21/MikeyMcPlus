@@ -4,10 +4,10 @@ import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.World;
 
 public class GameData {
-    World currWorld;
-    BlockVector3 pos1, pos2;
-    boolean stageSaved;
-    String name;
+    public World currWorld;
+    public BlockVector3 pos1, pos2;
+    public boolean stageSaved;
+    public String name;
     public GameData(World currWorld, String name) {
         this.currWorld = currWorld;
         this.name = name;

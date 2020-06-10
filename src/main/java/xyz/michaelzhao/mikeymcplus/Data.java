@@ -4,9 +4,9 @@ import java.io.File;
 import java.util.HashMap;
 
 public class Data {
-    HashMap<String, GameData> gameData;
-    String currGame = "";
-    File gamesFolder, stageFolder;
+    public HashMap<String, GameData> gameData;
+    public String currGame = "";
+    public File gamesFolder, stageFolder;
     public Data() {
         gameData = new HashMap<>();
         gamesFolder = new File(MikeyMcPlus.getInstance().getDataFolder().getPath() + System.getProperty("file.separator") + "games");
