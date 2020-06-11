@@ -12,7 +12,9 @@ public class GameSetupTabCompletion implements TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args) {
         if (command.getName().equalsIgnoreCase("games") && args.length == 1 && commandSender instanceof Player) {
-            return Arrays.asList("add", "active", "list", "loadstage", "load", "save", "tool", "savestage");
+            return Arrays.asList("add", "active", "list", "stageload", "load",
+                    "save",  "tool", "stagesave", "enable", "api", "setpos",
+                    "join", "quit");
         }
         return null;
     }

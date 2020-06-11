@@ -1,5 +1,6 @@
 package xyz.michaelzhao.mikeymcplus;
 
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class MikeyMcPlus extends JavaPlugin {
@@ -12,13 +13,13 @@ public class MikeyMcPlus extends JavaPlugin {
     public void onEnable() {
         super.onEnable();
         instance = this;
-        MikeyMcPlus.getInstance().getDataFolder().mkdir();
-        data = new Data();
-        this.getCommand("fun").setExecutor(new Fun());
-        this.getCommand("games").setExecutor(new CommandGames());
+        MikeyMcPlus.instance.getDataFolder().mkdir();
+        data = new Data(this.getServer().getWorlds().get(0));
+        this.getCommand("fun").setExecutor(new FunCommands());
+        this.getCommand("games").setExecutor(new GameCommands());
         this.getCommand("games").setTabCompleter(new GameSetupTabCompletion());
 
-        getServer().getPluginManager().registerEvents(new GameSetupListener(), this);
+        getServer().getPluginManager().registerEvents(new GameListener(), this);
 
         getLogger().info("Mikey is literally so cool");
     }
@@ -26,9 +27,8 @@ public class MikeyMcPlus extends JavaPlugin {
     @Override
     public void onDisable() {
         super.onDisable();
+        for (Player p : data.playersInGameList.keySet())
+            GameEngine.quit(p);
     }
 
-    public static MikeyMcPlus getInstance() {
-        return instance;
-    }
 }

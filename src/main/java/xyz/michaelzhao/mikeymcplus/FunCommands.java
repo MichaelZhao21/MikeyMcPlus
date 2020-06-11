@@ -14,7 +14,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Collections;
 
-public class Fun implements CommandExecutor {
+public class FunCommands implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] args) {
         if (commandSender instanceof Player) {
@@ -43,7 +43,7 @@ public class Fun implements CommandExecutor {
         }
         else {
             try {
-                lvl = Integer.parseInt(args[0]);
+                lvl = Integer.parseInt(args[1]);
             }
             catch (NumberFormatException n) {
                 player.sendMessage(ChatColor.RED + "Invalid argument for " + ChatColor.GOLD + "<Knockback Level>");
@@ -79,7 +79,6 @@ public class Fun implements CommandExecutor {
                 .build());
 
         fw.setFireworkMeta(fwm);
-        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(MikeyMcPlus.getInstance(), fw::detonate, 20);
+        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(MikeyMcPlus.instance, fw::detonate, 20);
     }
-
 }

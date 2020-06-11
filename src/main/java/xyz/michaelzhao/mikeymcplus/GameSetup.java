@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus.games;
+package xyz.michaelzhao.mikeymcplus;
 
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -13,7 +13,6 @@ import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.session.ClipboardHolder;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -23,8 +22,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import xyz.michaelzhao.mikeymcplus.GameData;
-import xyz.michaelzhao.mikeymcplus.MikeyMcPlus;
 
 import java.io.*;
 import java.util.Arrays;
@@ -39,7 +36,7 @@ public class GameSetup {
             player.sendMessage(ChatColor.RED + args[1] + " already exists!");
         MikeyMcPlus.data.currGame = args[1];
         player.sendMessage(ChatColor.GOLD + args[1] + ChatColor.GOLD + " set to active game editor");
-        GameSetup.saveGame();
+        saveGame();
     }
 
     public static void setActive(Player player, String[] args) {
@@ -65,7 +62,8 @@ public class GameSetup {
         tool.setItemMeta(meta);
         tool.setAmount(1);
         player.getInventory().addItem(tool);
-        player.sendMessage(ChatColor.AQUA + "Minigame tool: Left click to select pos1 and right click to selecct pos2");
+        player.sendMessage(ChatColor.AQUA + "Minigame tool: Left click to select pos1 and right click to select pos2");
+        player.sendMessage(ChatColor.AQUA + "pos1 MUST be the bottom NW corner and pos2 MUST be the top SE corner");
     }
 
     public static void list(Player player) {
@@ -95,9 +93,43 @@ public class GameSetup {
         return false;
     }
 
+    public static void setPos(Player player, String[] args) {
+        GameData data = MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.currGame);
+        if (args.length != 2) {
+            player.sendMessage(ChatColor.RED + "Usage: /games setPos <lobby | startPlatform1 | startPlatform2 | spectatorLoc | exitLoc>");
+        }
+        else if (args[1].equals("lobby") || args[1].equals("startPlatform1") || args[1].equals("startPlatform2") || args[1].equals("spectatorLoc") || args[1].equals("exitLoc")) {
+            double x = player.getLocation().getX();
+            double y = player.getLocation().getY();
+            double z = player.getLocation().getZ();
+            BlockVector3 pos = BlockVector3.at(x, y, z);
+            switch (args[1]) {
+                case "lobby":
+                    data.lobby = pos;
+                    break;
+                case "startPlatform1":
+                    data.startPlatform1 = pos;
+                    break;
+                case "startPlatform2":
+                    data.startPlatform2 = pos;
+                    break;
+                case "spectatorLoc":
+                    data.spectatorLoc = pos;
+                    break;
+                case "exitLoc":
+                    data.exitLoc = pos;
+                    break;
+            }
+            player.sendMessage(ChatColor.GOLD + args[1] + " position set!");
+        }
+        else {
+            player.sendMessage(ChatColor.RED + "Invalid set position, use <lobby | startPlatform1 | startPlatform2 | spectatorLoc | exitLoc>");
+        }
+    }
+
     public static void saveStage(Player player) {
         GameData gameData = MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.currGame);
-        CuboidRegion region = new CuboidRegion(BukkitAdapter.adapt(gameData.currWorld), gameData.pos1, gameData.pos2);
+        CuboidRegion region = new CuboidRegion(BukkitAdapter.adapt(MikeyMcPlus.data.currWorld), gameData.pos1, gameData.pos2);
         player.sendMessage(ChatColor.AQUA + "Saving " + region.getArea() + " blocks...");
         BlockArrayClipboard clipboard = new BlockArrayClipboard(region);
 
@@ -131,7 +163,7 @@ public class GameSetup {
         try (ClipboardReader reader = format.getReader(new FileInputStream(getGameFile()))) {
             Clipboard clipboard = reader.read();
             GameData currGame = MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.currGame);
-            EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(BukkitAdapter.adapt(currGame.currWorld), -1);
+            EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(BukkitAdapter.adapt(MikeyMcPlus.data.currWorld), -1);
             double x = currGame.pos1.getX();
             double y = currGame.pos1.getY();
             double z = currGame.pos1.getZ();
@@ -147,7 +179,7 @@ public class GameSetup {
         }
     }
 
-    public static void saveAllGames() {
+    public static void saveAllGames(Player player) {
         JSONArray out = new JSONArray();
         for (String str : MikeyMcPlus.data.gameData.keySet()) {
             out.add(str);
@@ -155,9 +187,10 @@ public class GameSetup {
             saveGame();
         }
         try {
-            FileWriter fw = new FileWriter(MikeyMcPlus.getInstance().getDataFolder().getPath() + System.getProperty("file.separator") + "games.json");
+            FileWriter fw = new FileWriter(MikeyMcPlus.instance.getDataFolder().getPath() + System.getProperty("file.separator") + "games.json");
             fw.write(out.toJSONString());
             fw.close();
+            player.sendMessage(ChatColor.GOLD + "Games saved!");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -166,14 +199,16 @@ public class GameSetup {
     public static void saveGame() {
         GameData data = MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.currGame);
         JSONObject out = new JSONObject();
-        JSONArray pos1Arr = new JSONArray();
-        pos1Arr.addAll(Arrays.asList(data.pos1.getX(), data.pos1.getY(), data.pos1.getZ()));
-        JSONArray pos2Arr = new JSONArray();
-        pos2Arr.addAll(Arrays.asList(data.pos2.getX(), data.pos2.getY(), data.pos2.getZ()));
         out.put("name", data.name);
-        out.put("pos1", pos1Arr);
-        out.put("pos2", pos2Arr);
+        out.put("pos1", CoordinatesToJsonArr(data.pos1));
+        out.put("pos2", CoordinatesToJsonArr(data.pos2));
         out.put("stageSaved", data.stageSaved);
+        out.put("enabled", data.enabled);
+        out.put("lobby", CoordinatesToJsonArr(data.lobby));
+        out.put("spectatorLoc", CoordinatesToJsonArr(data.spectatorLoc));
+        out.put("exitLoc", CoordinatesToJsonArr(data.exitLoc));
+        out.put("startPlatform1", CoordinatesToJsonArr(data.startPlatform1));
+        out.put("startPlatform2", CoordinatesToJsonArr(data.startPlatform2));
         try {
             FileWriter fw = new FileWriter(MikeyMcPlus.data.gamesFolder.getPath() + System.getProperty("file.separator") + MikeyMcPlus.data.currGame + ".json");
             fw.write(out.toJSONString());
@@ -184,17 +219,18 @@ public class GameSetup {
     }
 
     public static void loadAllGames(Player player) {
-        String input = readAllLines(MikeyMcPlus.getInstance().getDataFolder().getPath() + System.getProperty("file.separator") + "games.json");
+        player.sendMessage(ChatColor.AQUA + "Loading all games...");
+        String input = readAllLines(MikeyMcPlus.instance.getDataFolder().getPath() + System.getProperty("file.separator") + "games.json");
         if (input == null) return;
         JSONParser parser = new JSONParser();
         JSONArray arr;
-        Bukkit.getServer().broadcastMessage(input);
         try {
             arr = (JSONArray) parser.parse(input);
             for (Object o : arr.toArray()) {
                 MikeyMcPlus.data.currGame = (String) o;
                 loadGame(player);
             }
+            player.sendMessage(ChatColor.AQUA + "Loaded all games!");
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -207,16 +243,31 @@ public class GameSetup {
         try {
             object = (JSONObject) parser.parse(input);
             GameData data = new GameData(player.getWorld(), object.get("name").toString());
+            data.pos1 = JsonArrToCoordinates("pos1", object);
+            data.pos2 = JsonArrToCoordinates("pos2", object);
             data.stageSaved = object.get("stageSaved").toString().equals("true");
-            JSONArray pos1Arr = (JSONArray) object.get("pos1");
-            JSONArray pos2Arr = (JSONArray) object.get("pos2");
-            data.pos1 = BlockVector3.at(Integer.parseInt(pos1Arr.get(0).toString()), Integer.parseInt(pos1Arr.get(1).toString()), Integer.parseInt(pos1Arr.get(2).toString()));
-            data.pos2 = BlockVector3.at(Integer.parseInt(pos2Arr.get(0).toString()), Integer.parseInt(pos2Arr.get(1).toString()), Integer.parseInt(pos2Arr.get(2).toString()));
+            data.enabled = object.get("enabled").toString().equals("true");
+            data.lobby = JsonArrToCoordinates("lobby", object);
+            data.spectatorLoc = JsonArrToCoordinates("spectatorLoc", object);
+            data.startPlatform1 = JsonArrToCoordinates("startPlatform1", object);
+            data.startPlatform2 = JsonArrToCoordinates("startPlatform2", object);
+            data.exitLoc = JsonArrToCoordinates("exitLoc", object);
             MikeyMcPlus.data.gameData.put(data.name, data);
-            Bukkit.getServer().broadcastMessage(object.toJSONString());
+            player.sendMessage(ChatColor.GOLD + "Loaded " + data.name);
         } catch (ParseException e) {
             e.printStackTrace();
         }
+    }
+
+    public static BlockVector3 JsonArrToCoordinates(String attrib, JSONObject obj) {
+        JSONArray arr = (JSONArray) obj.get(attrib);
+        return BlockVector3.at(Integer.parseInt(arr.get(0).toString()), Integer.parseInt(arr.get(1).toString()), Integer.parseInt(arr.get(2).toString()));
+    }
+
+    public static JSONArray CoordinatesToJsonArr(BlockVector3 b) {
+        JSONArray arr = new JSONArray();
+        arr.addAll(Arrays.asList(b.getX(), b.getY(), b.getZ()));
+        return arr;
     }
 
     public static String readAllLines(String path) {

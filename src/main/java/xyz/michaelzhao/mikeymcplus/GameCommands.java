@@ -5,9 +5,8 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import xyz.michaelzhao.mikeymcplus.games.GameSetup;
 
-public class CommandGames implements CommandExecutor {
+public class GameCommands implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] args) {
         if (commandSender instanceof Player) {
@@ -42,11 +41,28 @@ public class CommandGames implements CommandExecutor {
                     GameSetup.loadStage();
                     break;
                 case "save":
-                    GameSetup.saveAllGames();
+                    GameSetup.saveAllGames(player);
                     break;
                 case "load":
                     GameSetup.loadAllGames(player);
                     break;
+                case "enable":
+                    GameEngine.enableGame(player, args);
+                    break;
+                case "api":
+                    GameEngine.kit(player, args);
+                    break;
+                case "setpos":
+                    GameSetup.setPos(player, args);
+                    break;
+                case "info":
+                    GameEngine.info(player);
+                    break;
+                case "join":
+                    GameEngine.join(player, args);
+                    break;
+                case "quit":
+                    GameEngine.quit(player);
             }
         }
         return true;
