@@ -8,6 +8,7 @@ public class MikeyMcPlus extends JavaPlugin {
     public static MikeyMcPlus instance = null;
 
     public static Data data;
+    public static int fwCount;
 
     @Override
     public void onEnable() {
@@ -15,10 +16,12 @@ public class MikeyMcPlus extends JavaPlugin {
         instance = this;
         MikeyMcPlus.instance.getDataFolder().mkdir();
         data = new Data(this.getServer().getWorlds().get(0));
+        fwCount = 0;
+
+
         this.getCommand("fun").setExecutor(new FunCommands());
         this.getCommand("games").setExecutor(new GameCommands());
         this.getCommand("games").setTabCompleter(new GameSetupTabCompletion());
-
         getServer().getPluginManager().registerEvents(new GameListener(), this);
 
         getLogger().info("Mikey is literally so cool");

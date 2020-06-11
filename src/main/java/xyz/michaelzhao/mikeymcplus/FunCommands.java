@@ -27,7 +27,15 @@ public class FunCommands implements CommandExecutor {
                     giveStick(player, args);
                     break;
                 case "firework":
-                    spawnRandomFirework(player);
+                    if (args.length == 2)
+                        try {
+                            final int num = Integer.parseInt(args[1]);
+                            for (int i = 0; i < num; i++)
+                                spawnRandomFirework(player);
+                        } catch(NumberFormatException e) {
+                            e.printStackTrace();
+                        }
+                    else spawnRandomFirework(player);
             }
         }
         return true;

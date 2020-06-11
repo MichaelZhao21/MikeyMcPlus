@@ -48,7 +48,7 @@ public class GameListener implements Listener {
         ItemStack item = e.getPlayer().getInventory().getItemInMainHand();
         if (item.getType() == Material.DIAMOND_PICKAXE &&
                 item.getItemMeta() != null &&
-                item.getItemMeta().getDisplayName().equals(ChatColor.GREEN + "Spoon")) {
+                item.getItemMeta().getDisplayName().equals(ChatColor.GREEN + "S P O O N")) {
             e.setDropItems(false);
         }
     }

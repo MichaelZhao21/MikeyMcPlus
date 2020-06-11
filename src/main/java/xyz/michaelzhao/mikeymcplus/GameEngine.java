@@ -133,6 +133,7 @@ public class GameEngine {
 
             player.getInventory().clear();
             giveKit("spleef", player);
+            player.setGameMode(GameMode.SURVIVAL);
             player.teleport(blockVectorToLocation(data.startPlatform1, player));
             player.sendMessage(ChatColor.AQUA + "Joined " + ChatColor.GOLD + args[1]);
         }
@@ -157,7 +158,6 @@ public class GameEngine {
                 player.addPotionEffect(p);
             player.setGameMode(pDat.oldMode);
             player.getInventory().setContents(items);
-            player.setGameMode(GameMode.ADVENTURE);
             player.teleport(blockVectorToLocation(data.lobby, player));
             player.sendMessage(ChatColor.AQUA + "Left game " + ChatColor.GOLD + data.name);
         }
@@ -165,6 +165,10 @@ public class GameEngine {
 
     public static Location blockVectorToLocation(BlockVector3 v, Player p) {
         return new Location(MikeyMcPlus.data.currWorld, v.getX(), v.getY(), v.getZ());
+    }
+
+    public static void start(Player player, String[] args) {
+
     }
 
     public static int createTimer(String game, boolean countdown, int seconds) {

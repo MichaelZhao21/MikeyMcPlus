@@ -63,6 +63,9 @@ public class GameCommands implements CommandExecutor {
                     break;
                 case "quit":
                     GameEngine.quit(player);
+                    break;
+                case "forcestart":
+                    GameEngine.start(player, args);
             }
         }
         return true;

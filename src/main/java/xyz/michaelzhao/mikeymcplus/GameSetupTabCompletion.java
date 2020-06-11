@@ -16,6 +16,7 @@ public class GameSetupTabCompletion implements TabCompleter {
                     "save",  "tool", "stagesave", "enable", "api", "setpos",
                     "join", "quit");
         }
+        // TODO: add advanced tab complete
         return null;
     }
 }
