@@ -49,8 +49,9 @@ public class GameCommands implements CommandExecutor {
                 case "enable":
                     GameEngine.enableGame(player, args);
                     break;
-                case "api":
-                    GameEngine.kit(player, args);
+                case "kit":
+                    GameEngine.giveKit("spleef", player);
+//                    GameEngine.kit(player, args);
                     break;
                 case "setpos":
                     GameSetup.setPos(player, args);
@@ -65,7 +66,8 @@ public class GameCommands implements CommandExecutor {
                     GameEngine.quit(player);
                     break;
                 case "forcestart":
-                    GameEngine.start(player, args);
+                    GameEngine.startCall(player, args);
+                    break;
             }
         }
         return true;

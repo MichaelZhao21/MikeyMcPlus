@@ -10,6 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class GameListener implements Listener {
@@ -51,5 +52,11 @@ public class GameListener implements Listener {
                 item.getItemMeta().getDisplayName().equals(ChatColor.GREEN + "S P O O N")) {
             e.setDropItems(false);
         }
+    }
+
+    @EventHandler
+    public void onPlayerFallEvent(PlayerMoveEvent e) {
+        if (e.getTo() != null && e.getTo().getY() < 0 && MikeyMcPlus.data.playersInGameList.containsKey(e.getPlayer()))
+            GameEngine.playerDeath(e.getPlayer(), MikeyMcPlus.data.playersInGameList.get(e.getPlayer()));
     }
 }
