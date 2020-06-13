@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus;
+package xyz.michaelzhao.mikeymcplus.games;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -12,7 +12,7 @@ public class GameSetupTabCompletion implements TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args) {
         if (command.getName().equalsIgnoreCase("games") && args.length == 1 && commandSender instanceof Player) {
-            return Arrays.asList("add", "active", "list", "stageload", "load",
+            return Arrays.asList("add", "list", "stageload", "load",
                     "save",  "tool", "stagesave", "enable", "api", "setpos",
                     "join", "quit");
         }

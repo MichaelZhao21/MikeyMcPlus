@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus;
+package xyz.michaelzhao.mikeymcplus.games;
 
 import org.bukkit.GameMode;
 import org.bukkit.inventory.ItemStack;

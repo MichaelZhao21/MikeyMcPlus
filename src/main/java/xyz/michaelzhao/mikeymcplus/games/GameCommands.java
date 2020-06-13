@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus;
+package xyz.michaelzhao.mikeymcplus.games;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -21,20 +21,14 @@ public class GameCommands implements CommandExecutor {
                 case "add":
                     GameSetup.newGame(player, args);
                     break;
-                case "active":
-                    GameSetup.setActive(player, args);
-                    break;
                 case "list":
                     GameSetup.list(player);
                     break;
                 case "tool":
-                    if (GameSetup.isNoGameSelected(player)) return false;
-                    GameSetup.giveTool(player);
+                    GameSetup.giveTool(player, args);
                     break;
                 case "stagesave":
-                    if (GameSetup.isNoGameSelected(player)) return false;
-                    GameSetup.saveStage(player);
-                    GameSetup.saveGame();
+                    GameSetup.saveStage(player, args);
                     break;
                 case "stageload":
                     if (GameSetup.isNoGameSelected(player)) return false;
@@ -49,7 +43,7 @@ public class GameCommands implements CommandExecutor {
                 case "enable":
                     GameEngine.enableGame(player, args);
                     break;
-                case "kit":
+                case "kit": // TODO: fix kit command
                     GameEngine.giveKit("spleef", player);
 //                    GameEngine.kit(player, args);
                     break;

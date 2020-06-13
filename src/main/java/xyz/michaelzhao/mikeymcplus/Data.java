@@ -2,6 +2,7 @@ package xyz.michaelzhao.mikeymcplus;
 
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import xyz.michaelzhao.mikeymcplus.games.GameData;
 
 import java.io.File;
 import java.util.HashMap;
@@ -9,7 +10,7 @@ import java.util.HashMap;
 public class Data {
     public World currWorld;
     public HashMap<String, GameData> gameData;
-    public String currGame = "";
+    public String toolGame;
     public File gamesFolder, stageFolder;
     public HashMap<Player, String> playersInGameList;
 
@@ -21,5 +22,6 @@ public class Data {
         if (!gamesFolder.exists()) gamesFolder.mkdir();
         if (!stageFolder.exists()) stageFolder.mkdir();
         playersInGameList = new HashMap<>();
+        this.toolGame = "";
     }
 }

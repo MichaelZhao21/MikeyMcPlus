@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus;
+package xyz.michaelzhao.mikeymcplus.games;
 
 import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.ChatColor;
@@ -12,6 +12,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
+import xyz.michaelzhao.mikeymcplus.MikeyMcPlus;
 
 public class GameListener implements Listener {
     @EventHandler
@@ -31,7 +32,7 @@ public class GameListener implements Listener {
             int x = block.getX();
             int y = block.getY();
             int z = block.getZ();
-            GameData toolData = MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.currGame);
+            DeathmatchData toolData = (DeathmatchData) MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame); // TODO: Fix casting
             if (action.equals(Action.LEFT_CLICK_BLOCK)) {
                 event.setCancelled(true);
                 player.sendMessage(String.format("%sPos1 set to: (%d, %d, %d)",ChatColor.LIGHT_PURPLE, x, y, z));

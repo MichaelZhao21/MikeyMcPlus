@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus;
+package xyz.michaelzhao.mikeymcplus.games;
 
 import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.*;
@@ -10,12 +10,13 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
+import xyz.michaelzhao.mikeymcplus.MikeyMcPlus;
 
 import java.util.Collections;
 
-public class GameEngine {
+public class GameEngine { // TODO add change game type
     public static void enableGame(Player player, String[] args) {
-        String em = ChatColor.RED + "Usage: /games enable <GameName> [true | false]";
+        String em = ChatColor.RED + "Usage: /games enable <GameName> [true | false]"; //TODO Check if this is correct
         if (args.length != 3)
             player.sendMessage(em);
         else if (!args[2].equals("true") && !args[2].equals("false"))
@@ -24,7 +25,7 @@ public class GameEngine {
             player.sendMessage(ChatColor.RED + "Game " + args[2] + " could not be found!");
         else {
             boolean en = args[2].equals("true");
-            GameData curr = MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.currGame);
+            DeathmatchData curr = (DeathmatchData) MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame); // TODO: Fix casting
             if (en) {
                 boolean oop = false;
                 BlockVector3 notSet = BlockVector3.at(0, 0, 0);
@@ -49,19 +50,20 @@ public class GameEngine {
                     player.sendMessage(ChatColor.RED + "Exit location not set");
                 }
                 if (!oop) {
-                    MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.currGame).enabled = true;
-                    player.sendMessage(ChatColor.GOLD + MikeyMcPlus.data.currGame + " enabled!");
+                    MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame).enabled = true;
+                    player.sendMessage(ChatColor.GOLD + MikeyMcPlus.data.toolGame + " enabled!");
                 }
             }
             else {
-                MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.currGame).enabled = false;
-                player.sendMessage(ChatColor.GOLD + MikeyMcPlus.data.currGame + " disabled");
+                MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame).enabled = false;
+                player.sendMessage(ChatColor.GOLD + MikeyMcPlus.data.toolGame + " disabled");
             }
         }
     }
 
     public static void info(Player player) {
-        GameData data = MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.currGame);
+        // TODO: process argument omg
+        DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame); // TODO: Fix casting
         player.sendMessage("-----------------------------------");
         player.sendMessage(ChatColor.GOLD + "Name: " + data.name);
         player.sendMessage("Enabled: " + data.enabled);
@@ -74,8 +76,8 @@ public class GameEngine {
         player.sendMessage("-----------------------------------");
     }
 
-    public static String coordsToString(String label, BlockVector3 v) {
-        return String.format("%s: (%d, %d, %d)", label, v.getX(), v.getY(), v.getZ());
+    public static String coordsToString(String label, Location v) {
+        return String.format("%s: (%d, %d, %d) | facing<%s>", label, (int) v.getX(), (int) v.getY(), (int) v.getZ(), v.getDirection().toString());
     }
 
     public static void kit(Player player, String[] args) { // TODO: fix :((
@@ -119,7 +121,7 @@ public class GameEngine {
             player.sendMessage(ChatColor.RED + "Already in game " + MikeyMcPlus.data.playersInGameList.get(player));
         }
         else {
-            GameData data = MikeyMcPlus.data.gameData.get(args[1]);
+            DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(args[1]); // TODO: Fix casting
             if (!data.enabled) {
                 player.sendMessage(ChatColor.RED + "Game not enabled!");
                 return;
@@ -127,7 +129,6 @@ public class GameEngine {
             if (data.gameState != GameState.LOBBY && data.gameState != GameState.STOPPED) {
                 player.sendMessage(ChatColor.RED + "Game is currently playing");
             }
-            Bukkit.broadcastMessage(player.getName() + " " + data.name + " " + data.gamePlayers.keySet() + " " + data.timerCount);
             data.gamePlayers.put(player.getName(), player);
             data.gamePlayerObjects.put(player.getName(), new PlayerGameData(
                     player.getInventory().getContents(),
@@ -138,33 +139,34 @@ public class GameEngine {
             giveKit("spleef", player);
             player.setHealth(20.0);
             player.setGameMode(GameMode.ADVENTURE);
-            player.teleport(blockVectorToLocation(data.lobby));
+            player.teleport(data.lobby);
             player.sendMessage(ChatColor.AQUA + "Joined " + ChatColor.GOLD + args[1]);
             if (data.gameState == GameState.STOPPED)
                 startLobby(data);
         }
     }
 
-    public static void startLobby(GameData data) {
+    public static void startLobby(DeathmatchData data) { // TODO: Fix casting
         data.timerId = createTimer(data.name, true, 30, "start", null);
         data.gameState = GameState.LOBBY;
     }
 
     public static void startCall(Player player, String[] args) {
+        DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(args[1]); // TODO: Fix casting
         if (args.length != 2)
             player.sendMessage(ChatColor.RED + "Usage: /games start <GameName>");
         else if (!MikeyMcPlus.data.gameData.containsKey(args[1]))
             player.sendMessage(ChatColor.RED + args[1] + " game not found");
-        else if (MikeyMcPlus.data.gameData.get(args[1]).gameState != GameState.LOBBY)
+        else if (data.gameState != GameState.LOBBY) // TODO: Fix casting
             player.sendMessage(ChatColor.RED + args[1] + " has no players in the lobby!");
         else {
-            MikeyMcPlus.instance.getServer().getScheduler().cancelTask(MikeyMcPlus.data.gameData.get(args[1]).timerId);
+            MikeyMcPlus.instance.getServer().getScheduler().cancelTask(data.timerId); // TODO: Fix casting
             start(args[1]);
         }
     }
 
     public static void start(String gameName) {
-        GameData data = MikeyMcPlus.data.gameData.get(gameName);
+        DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(gameName); // TODO: Fix casting
         data.gameState = GameState.RUNNING;
         data.timerId = createTimer(gameName, false, 0, null, "endgame");
         data.playersAlive = data.gamePlayers.size();
@@ -176,13 +178,13 @@ public class GameEngine {
         }
     }
 
-    public static Location randomSpawn(BlockVector3 start, BlockVector3 end) {
+    public static Location randomSpawn(BlockVector3 start, BlockVector3 end) { //TODO: Add facing center
         double x = Math.random() * (end.getX() - start.getX()) + start.getX();
         double z = Math.random() * (end.getZ() - start.getZ()) + start.getZ();
         return new Location(MikeyMcPlus.data.currWorld, x, start.getY(), z);
     }
 
-    public static void quit(Player player) {
+    public static void quit(Player player) { // TODO: Add check to see if no players left
         if (!MikeyMcPlus.data.playersInGameList.containsKey(player)) {
             player.sendMessage(ChatColor.RED + "Not in a game");
         }
@@ -193,7 +195,7 @@ public class GameEngine {
     }
 
     public static void removeFromGame(Player player) {
-        GameData data = MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.playersInGameList.get(player));
+        DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.playersInGameList.get(player)); // TODO: Fix casting
         PlayerGameData pDat = data.gamePlayerObjects.get(player.getName());
         ItemStack[] items = pDat.oldInventory;
         MikeyMcPlus.data.playersInGameList.remove(player);
@@ -208,14 +210,10 @@ public class GameEngine {
         player.setGameMode(pDat.oldMode);
         player.getInventory().setContents(items);
         player.setVelocity(new Vector());
-        player.teleport(blockVectorToLocation(data.exitLoc));
+        player.teleport(data.exitLoc);
     }
 
-    public static Location blockVectorToLocation(BlockVector3 v) {
-        return new Location(MikeyMcPlus.data.currWorld, v.getX(), v.getY(), v.getZ());
-    }
-
-    public static void checkForEndGame(GameData data) {
+    public static void checkForEndGame(DeathmatchData data) { // TODO: Fix casting
         if (data.playersAlive == 1) {
             Player winner = getWinner(data);
             String winName = winner.getName();
@@ -227,14 +225,14 @@ public class GameEngine {
                 removeFromGame(player);
                 player.sendTitle(String.format("%s won %s!", ChatColor.GOLD + winName, ChatColor.AQUA + data.name), "", 10, 60, 20);
             }
-            MikeyMcPlus.data.currGame = data.name;
+            MikeyMcPlus.data.toolGame = data.name;
             GameSetup.loadStage(); // TODO: Remove the currGame thing
             data.timerCount = 0;
             data.gameState = GameState.STOPPED;
         }
     }
 
-    public static Player getWinner(GameData data) {
+    public static Player getWinner(DeathmatchData data) { // TODO: Fix casting
         for (Player p : data.gamePlayers.values())
             if (data.gamePlayerObjects.get(p.getName()).state == PlayerState.GAME)
                 return p;
@@ -242,12 +240,12 @@ public class GameEngine {
     }
 
     public static void playerDeath(Player player, String gameName) {
-        GameData data = MikeyMcPlus.data.gameData.get(gameName);
+        DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(gameName); // TODO: Fix casting
         if (data.gameState == GameState.RUNNING && data.gamePlayerObjects.get(player.getName()).state == PlayerState.GAME) {
             player.sendTitle("You died!", "You lasted " + data.timerCount + " seconds", 10, 60, 20);
             player.setGameMode(GameMode.SPECTATOR);
             player.getInventory().clear();
-            player.teleport(blockVectorToLocation(data.spectatorLoc));
+            player.teleport(data.spectatorLoc);
             data.gamePlayerObjects.get(player.getName()).state = PlayerState.SPECTATOR;
             data.playersAlive--;
             checkForEndGame(data);
@@ -257,7 +255,7 @@ public class GameEngine {
     }
 
     public static int createTimer(String game, boolean countdown, int seconds, String callback, String fun) {
-        GameData data = MikeyMcPlus.data.gameData.get(game);
+        DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(game); // TODO: Fix casting
         data.timerCount = (countdown ? seconds : 0);
         for (Player p : data.gamePlayers.values()) {
             p.setLevel(data.timerCount);
@@ -265,7 +263,7 @@ public class GameEngine {
         return MikeyMcPlus.instance.getServer().getScheduler().scheduleSyncRepeatingTask(MikeyMcPlus.instance, (() -> runTimer(data, countdown, callback, fun)), 20L, 20L);
     }
 
-    public static void runTimer(GameData data, boolean countdown, String callback, String fun) {
+    public static void runTimer(DeathmatchData data, boolean countdown, String callback, String fun) { // TODO: Fix casting
         if (countdown) {
             data.timerCount--;
             if (data.timerCount == 0) {
@@ -282,7 +280,7 @@ public class GameEngine {
         }
     }
 
-    public static void timerFun(String fun, GameData data) {
+    public static void timerFun(String fun, DeathmatchData data) { // TODO: Fix casting
         switch (fun) {
             case "endgame":
                 checkForEndGame(data);
@@ -290,7 +288,7 @@ public class GameEngine {
         }
     }
 
-    public static void timerEnd(String callback, GameData data) {
+    public static void timerEnd(String callback, DeathmatchData data) { // TODO: Fix casting
         MikeyMcPlus.instance.getServer().getScheduler().cancelTask(data.timerId);
         switch (callback) {
             case "start":

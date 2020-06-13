@@ -2,13 +2,16 @@ package xyz.michaelzhao.mikeymcplus;
 
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import xyz.michaelzhao.mikeymcplus.games.GameCommands;
+import xyz.michaelzhao.mikeymcplus.games.GameEngine;
+import xyz.michaelzhao.mikeymcplus.games.GameListener;
+import xyz.michaelzhao.mikeymcplus.games.GameSetupTabCompletion;
 
 public class MikeyMcPlus extends JavaPlugin {
 
     public static MikeyMcPlus instance = null;
 
     public static Data data;
-    public static int fwCount;
 
     @Override
     public void onEnable() {
@@ -16,8 +19,6 @@ public class MikeyMcPlus extends JavaPlugin {
         instance = this;
         MikeyMcPlus.instance.getDataFolder().mkdir();
         data = new Data(this.getServer().getWorlds().get(0));
-        fwCount = 0;
-
 
         this.getCommand("fun").setExecutor(new FunCommands());
         this.getCommand("games").setExecutor(new GameCommands());
