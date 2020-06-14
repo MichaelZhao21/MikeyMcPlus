@@ -12,8 +12,8 @@ public class GameSetupTabCompletion implements TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args) {
         if (command.getName().equalsIgnoreCase("games") && args.length == 1 && commandSender instanceof Player) {
-            return Arrays.asList("add", "list", "stageload", "load",
-                    "save",  "tool", "stagesave", "enable", "api", "setpos",
+            return Arrays.asList("add", "list", "arena", "load",
+                    "save",  "tool", "enable", "api", "setpos",
                     "join", "quit");
         }
         // TODO: add advanced tab complete

@@ -13,82 +13,74 @@ import com.sk89q.worldedit.function.operation.Operations;
 import com.sk89q.worldedit.math.BlockVector3;
 import com.sk89q.worldedit.regions.CuboidRegion;
 import com.sk89q.worldedit.session.ClipboardHolder;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.util.Vector;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import xyz.michaelzhao.mikeymcplus.MikeyMcPlus;
+import xyz.michaelzhao.mikeymcplus.Util;
 
 import java.io.*;
 import java.util.Arrays;
 
 public class GameSetup {
-
     /**
      * Creates a new game with a game name and type
-     * @param player - player that issued the command
-     * @param args - command arguments
+     * @param player player that issued the command
+     * @param args command arguments
      */
     public static void newGame(Player player, String[] args) {
-        // All game names lowercase
+        //Check args
+        if (Util.isArgsIncorrectLength(args, 3, "Usage: /games add <Game Name> <deathmatch|parkour>", player)) return;
+
+        // All game names are lowercase
         args[1] = args[1].toLowerCase();
 
-        // Usage error message
-        String usage = ChatColor.RED + "Usage: /games add <Game Name> <deathmatch | parkour>";
-
-        // Check to see if correct num of args
-        if (args.length != 3) {
-            player.sendMessage(usage);
-            return;
-        }
-
-        // Check for valid GameType
-        if (GameData.stringToGameType(args[2]) == null) {
-            player.sendMessage(usage);
-            return;
-        }
-
-        // Add game or tell player that it already exists
-        GameData data = MikeyMcPlus.data.gameData.putIfAbsent(args[1], new GameData(args[1], GameData.stringToGameType(args[2])));
-        if (data == null)
+        // Check if the game exists
+        if (MikeyMcPlus.data.gameData.containsKey(args[1])) {
             player.sendMessage(ChatColor.RED + args[1] + " already exists!");
-        else
-            player.sendMessage(ChatColor.GOLD + "Added " + args[1]);
+            return;
+        }
 
-        // Set game to current game and save
-        MikeyMcPlus.data.toolGame = args[1];
-        player.sendMessage(ChatColor.GOLD + args[1] + ChatColor.GOLD + " set to active game editor");
+        // Check for valid game type
+        if (!GameData.isValidGameType(args[2], player)) return;
+
+        // Create general data object and child class // TODO: fix this description
+        GameData data;
+        if (args[2].equals("deathmatch"))
+            data = new DeathmatchData(args[1]);
+        else if (args[2].equals("parkour"))
+            data = new ParkourData(args[1]);
+        else
+            return;
+
+        // Add to hashmap and send added message
+        MikeyMcPlus.data.gameData.put(args[1], data);
+        player.sendMessage(ChatColor.GOLD + "Added " + args[1]);
+
+        // Saves game
         saveGame(args[1]);
     }
 
     /**
-     * Gives the stage selection tool to the player
-     * @param player - player that issued the command
-     * @param args - command arguments
+     * Gives the arena selection tool to the player
+     * @param player player that issued the command
+     * @param args command arguments
      */
     public static void giveTool(Player player, String[] args) {
-        // Check for num of args
-        if (args.length != 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /games tool <Game Name>");
-            return;
-        }
-
-        // Get game and send error if invalid name
-        GameData data = MikeyMcPlus.data.gameData.get(args[1]);
-        if (data == null) {
-            player.sendMessage(ChatColor.RED + data.name + " is not a valid game");
-            return;
-        }
+        // Check command
+        if (Util.isArgsIncorrectLength(args, 2, "games tool <Game Name>", player)) return;
+        if (Util.isInvalidGame(args[1], player)) return;
 
         // Sets the game to the toolGame
-        MikeyMcPlus.data.toolGame = args[1];
+        MikeyMcPlus.data.toolGame = args[1]; // TODO: Add UI for tool | Maybe create tool class?
 
         // Create tool and give it to the player
         ItemStack tool = new ItemStack(Material.BLAZE_ROD);
@@ -106,9 +98,12 @@ public class GameSetup {
 
     /**
      * List out the games currently avaliable
-     * @param player - player that issued the command
+     * @param player player that issued the command
      */
-    public static void list(Player player) {
+    public static void list(Player player, String[] args) {
+        // Check args length
+        if (Util.isArgsIncorrectLength(args, 1, "games list", player)) return;
+
         // List title
         player.sendMessage(ChatColor.AQUA + "List of minigames:");
 
@@ -125,42 +120,9 @@ public class GameSetup {
     }
 
     /**
-     * Opens the game file
-     * @return the file object
-     */
-    public static File getGameFile() {
-        // Creates a file object, replacing spaces with underscores in the game name
-        File gameFile = new File(MikeyMcPlus.data.stageFolder + System.getProperty("file.separator") + MikeyMcPlus.data.toolGame.replace(' ', '_'));
-
-        // Check to see if the file exists and creates one if not
-        if (!gameFile.exists()) {
-            try {
-                gameFile.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        // Returns the file object
-        return gameFile;
-    }
-
-    /**
-     * Checks to see if any game is active
-     * @param player - the player object
-     * @return - no game selected
-     */
-    public static boolean isNoGameSelected(Player player) { // TODO: Remove this function oml
-        if (!MikeyMcPlus.data.toolGame.isEmpty())
-            return false;
-        player.sendMessage(ChatColor.RED + "No active game editors");
-        return true;
-    }
-
-    /**
      * Set position
-     * @param player - player that issued the command
-     * @param args - command arguments
+     * @param player player that issued the command
+     * @param args command arguments
      */
     public static void setPos(Player player, String[] args) { // TODO: put this on the tool
         DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame); // TODO: Fix casting
@@ -175,10 +137,10 @@ public class GameSetup {
                     data.lobby = loc;
                     break;
                 case "startPlatform1":
-                    data.startPlatform1 = pos;
+                    data.startPos1 = pos;
                     break;
                 case "startPlatform2":
-                    data.startPlatform2 = pos;
+                    data.startPos2 = pos;
                     break;
                 case "spectatorLoc":
                     data.spectatorLoc = loc;
@@ -195,19 +157,77 @@ public class GameSetup {
     }
 
     /**
-     * Saves the stage
-     * @param player - player that issued the command
-     * @param args - command arguments
+     * Player runs arena command
+     * @param player player that issued the command
+     * @param args command arguments
      */
-    public static void saveStage(Player player, String[] args) {
-        // TODO: Check args
-        DeathmatchData gameData = (DeathmatchData) MikeyMcPlus.data.gameData.get(args[1]); // TODO: Fix casting
-        CuboidRegion region = new CuboidRegion(BukkitAdapter.adapt(MikeyMcPlus.data.currWorld), gameData.pos1, gameData.pos2);
+    public static void arenaCommand(Player player, String[] args) {
+        // Check command
+        if (Util.isArgsIncorrectLength(args, 3, "games arena <save | load> <Game Name>", player)) return;
+        if (Util.isInvalidGame(args[2], player)) return;
+
+        // All game names lowercase
+        args[2] = args[2].toLowerCase();
+
+        // Get data and make sure it's the right type
+        GameData dataObj = MikeyMcPlus.data.gameData.get(args[2]);
+        if (!(dataObj instanceof DeathmatchData)) {
+            player.sendMessage(ChatColor.RED + "Game mode " + dataObj.getGameType() + " does not have an arena");
+        }
+
+        // Check operation and run method if valid
+        if (args[1].equals("save"))
+            saveArena(player, dataObj);
+        else if (args[1].equals("load"))
+            loadArena(dataObj);
+        else { // TODO: Make this error message more logical ?(move before game mode error)
+            player.sendMessage(ChatColor.RED + "Unknown operation" + args[2]);
+            player.sendMessage(ChatColor.RED + "Usage: /games arena <save | load> <Game Name>");
+        }
+    }
+
+    /**
+     * Opens the game file
+     * @param parentFolder the parent directory of the file
+     * @param gameName the name of the game
+     * @return the file object
+     */
+    public static File getGameFile(File parentFolder, String gameName) {
+        // Creates a file object, replacing spaces with underscores in the game name
+        File gameFile = new File(parentFolder.getPath() + System.getProperty("file.separator") + gameName.replace(' ', '_'));
+
+        // Check to see if the file exists and creates one if not
+        if (!gameFile.exists()) {
+            try {
+                gameFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Returns the file object
+        return gameFile;
+    }
+
+    /**
+     * Saves the arena
+     * @param player player that issued the command
+     * @param gameData the game object base class
+     */
+    public static void saveArena(Player player, GameData gameData) {
+        // Cast to correct type
+        DeathmatchData data = (DeathmatchData) gameData;
+
+        // Get the region object from position 1 and 2
+        CuboidRegion region = new CuboidRegion(BukkitAdapter.adapt(MikeyMcPlus.data.currWorld), data.pos1, data.pos2);
+        data.arenaSaved = true;
+
+        // Tell the player that we're saving
         player.sendMessage(ChatColor.AQUA + "Saving " + region.getArea() + " blocks...");
+
+        // Create clipboard and editsession from region and copy it
         BlockArrayClipboard clipboard = new BlockArrayClipboard(region);
-
         EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(region.getWorld(), -1);
-
         ForwardExtentCopy forwardExtentCopy = new ForwardExtentCopy(editSession, region, clipboard, region.getMinimumPoint());
         forwardExtentCopy.setCopyingEntities(true);
         try {
@@ -217,7 +237,8 @@ public class GameSetup {
             e.printStackTrace();
         }
 
-        try (ClipboardWriter writer = BuiltInClipboardFormat.SPONGE_SCHEMATIC.getWriter(new FileOutputStream(getGameFile()))) {
+        // Write clipboard to the save file
+        try (ClipboardWriter writer = BuiltInClipboardFormat.SPONGE_SCHEMATIC.getWriter(new FileOutputStream(getGameFile(MikeyMcPlus.data.arenaFolder, data.name)))) {
             try {
                 writer.write(clipboard);
             } catch (IOException e) {
@@ -227,20 +248,32 @@ public class GameSetup {
             e.printStackTrace();
         }
 
-        gameData.stageSaved = true;
+        // Set the arenaSaved flag to true and tell the player that the arena was saved
         player.sendMessage(ChatColor.GOLD + "Saved!");
-        saveGame(args[1]);
+
+        // Saves the game
+        saveGame(data.name);
     }
 
-    public static void loadStage() {
-        ClipboardFormat format = ClipboardFormats.findByFile(getGameFile());
-        try (ClipboardReader reader = format.getReader(new FileInputStream(getGameFile()))) {
+    /**
+     * Loads the arena
+     * @param gameData the game object base class
+     */
+    public static void loadArena(GameData gameData) {
+        // Convert to correct type
+        DeathmatchData data = (DeathmatchData) gameData;
+
+        // Create clipboard from file
+        File gameFile = getGameFile(MikeyMcPlus.data.arenaFolder, data.name);
+        ClipboardFormat format = ClipboardFormats.findByFile(gameFile);
+
+        // Reads the schematic and pastes
+        try (ClipboardReader reader = format.getReader(new FileInputStream(gameFile))) { // TODO: add exception
             Clipboard clipboard = reader.read();
-            DeathmatchData currGame = (DeathmatchData) MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame); // TODO: Fix casting
             EditSession editSession = WorldEdit.getInstance().getEditSessionFactory().getEditSession(BukkitAdapter.adapt(MikeyMcPlus.data.currWorld), -1);
-            double x = currGame.pos1.getX();
-            double y = currGame.pos1.getY();
-            double z = currGame.pos1.getZ();
+            double x = data.pos1.getX();
+            double y = data.pos1.getY();
+            double z = data.pos1.getZ();
             Operation operation = new ClipboardHolder(clipboard)
                     .createPaste(editSession)
                     .to(BlockVector3.at(x, y, z))
@@ -253,38 +286,65 @@ public class GameSetup {
         }
     }
 
+    /**
+     * Runs the save command on all games and creates a global games json file to reference
+     * @param player player that issued the command
+     */
     public static void saveAllGames(Player player) {
+        // Create output array
         JSONArray out = new JSONArray();
+
+        // Iterate through games, add game name to output array and run saveGame method
         for (String str : MikeyMcPlus.data.gameData.keySet()) {
             out.add(str);
-            MikeyMcPlus.data.toolGame = str;
             saveGame(str);
+            player.sendMessage(ChatColor.GOLD + str + ChatColor.AQUA + " was saved successfully");
         }
+
+        // Write output array to games json file
         try {
-            FileWriter fw = new FileWriter(MikeyMcPlus.instance.getDataFolder().getPath() + System.getProperty("file.separator") + "games.json");
+            FileWriter fw = new FileWriter(getGameFile(MikeyMcPlus.data.gamesFolder, "games.json"));
             fw.write(out.toJSONString());
             fw.close();
-            player.sendMessage(ChatColor.GOLD + "Games saved!");
         } catch (IOException e) {
             e.printStackTrace();
+            return;
         }
+
+        // Tell the player that the saving was successful
+        player.sendMessage(ChatColor.GOLD + "Games saved!");
     }
 
+    /**
+     * Saves single game to its own file in the games folder
+     * @param gameName the name of the game
+     */
     public static void saveGame(String gameName) {
-        DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame); // TODO: Fix casting
+        // Get game data and create output object
+        GameData gameData = MikeyMcPlus.data.gameData.get(gameName);
         JSONObject out = new JSONObject();
-        out.put("name", data.name);
-        out.put("pos1", BlockVector3ToJsonArr(data.pos1));
-        out.put("pos2", BlockVector3ToJsonArr(data.pos2));
-        out.put("stageSaved", data.stageSaved);
-        out.put("enabled", data.enabled);
-        out.put("lobby", LocationToJsonArr(data.lobby));
-        out.put("spectatorLoc", LocationToJsonArr(data.spectatorLoc));
-        out.put("exitLoc", LocationToJsonArr(data.exitLoc));
-        out.put("startPlatform1", BlockVector3ToJsonArr(data.startPlatform1));
-        out.put("startPlatform2", BlockVector3ToJsonArr(data.startPlatform2));
+
+        // Add general data
+        out.put("gameType", gameData.getGameType());
+        out.put("name", gameData.name);
+        out.put("enabled", gameData.enabled);
+        out.put("lobby", Util.locationToJsonArr(gameData.lobby));
+        out.put("exitLoc", Util.locationToJsonArr(gameData.exitLoc));
+
+        // Add game type specific data
+        if (gameData instanceof DeathmatchData) {
+            DeathmatchData deathmatchData = (DeathmatchData) gameData;
+            out.put("pos1", Util.blockVector3ToJsonArr(deathmatchData.pos1));
+            out.put("pos2", Util.blockVector3ToJsonArr(deathmatchData.pos2));
+            out.put("arenaSaved", deathmatchData.arenaSaved);
+            out.put("spectatorLoc", Util.locationToJsonArr(deathmatchData.spectatorLoc));
+            out.put("startPlatform1", Util.blockVector3ToJsonArr(deathmatchData.startPos1));
+            out.put("startPlatform2", Util.blockVector3ToJsonArr(deathmatchData.startPos2));
+        }
+
+        // Write data to file
         try {
-            FileWriter fw = new FileWriter(MikeyMcPlus.data.gamesFolder.getPath() + System.getProperty("file.separator") + MikeyMcPlus.data.toolGame + ".json");
+            FileWriter fw = new FileWriter(getGameFile(MikeyMcPlus.data.gamesFolder, gameName));
             fw.write(out.toJSONString());
             fw.close();
         } catch (IOException e) {
@@ -292,84 +352,85 @@ public class GameSetup {
         }
     }
 
+    /**
+     * Runs the load games command on all games and creates the game objects from data files
+     * @param player the player that issued the command
+     */
     public static void loadAllGames(Player player) {
+        // Send loading message to player
         player.sendMessage(ChatColor.AQUA + "Loading all games...");
-        String input = readAllLines(MikeyMcPlus.instance.getDataFolder().getPath() + System.getProperty("file.separator") + "games.json");
-        if (input == null) return;
+
+        // Read the file
+        String input = Util.readAllLines(getGameFile(MikeyMcPlus.data.gamesFolder, "games.json"));
+
+        // Return if the file doesn't exist
+        if (input == null) {
+            player.sendMessage(ChatColor.RED + "Games file doesn't exist!");
+            return;
+        }
+
+        // Create JSON parser and parse the input into an array
         JSONParser parser = new JSONParser();
         JSONArray arr;
         try {
             arr = (JSONArray) parser.parse(input);
+
+            // Iterate through the array and load the game
             for (Object o : arr.toArray()) {
-                MikeyMcPlus.data.toolGame = (String) o;
-                loadGame(player);
+                loadGame((String) o);
+                player.sendMessage(ChatColor.AQUA + "Loaded " + ChatColor.GOLD + o);
             }
             player.sendMessage(ChatColor.AQUA + "Loaded all games!");
         } catch (ParseException e) {
             e.printStackTrace();
+            player.sendMessage(ChatColor.RED + "No games found");
         }
     }
 
-    public static void loadGame(Player player) { // TODO: remove _ from saves
-        String input = readAllLines(MikeyMcPlus.data.gamesFolder.getPath() + System.getProperty("file.separator") + MikeyMcPlus.data.toolGame + ".json");
-        JSONParser parser = new JSONParser();
-        JSONObject object;
+    /**
+     * Loads single game from the games folder
+     * @param gameName the name of the game
+     */
+    public static void loadGame(String gameName) {
+        // Read the file
+        String input = Util.readAllLines(getGameFile(MikeyMcPlus.data.gamesFolder, gameName));
+
+        // Parse the data
         try {
-            object = (JSONObject) parser.parse(input);
-            DeathmatchData data = new DeathmatchData(object.get("name").toString(), GameType.DEATHMATCH); // TODO: Fix casting
-            data.pos1 = JsonArrToBlockVector3("pos1", object);
-            data.pos2 = JsonArrToBlockVector3("pos2", object);
-            data.stageSaved = object.get("stageSaved").toString().equals("true");
+            JSONParser parser = new JSONParser();
+            JSONObject object = (JSONObject) parser.parse(input);
+
+            // Get the game type
+            String type = object.get("gameType").toString();
+
+            // Create game based on data type and load specific attributes first
+            // Then cast to base class type
+            GameData data;
+            if (type.equals("deathmatch")) { //TODO: switch
+                DeathmatchData deathmatchData = new DeathmatchData(object.get("name").toString());
+                deathmatchData.spectatorLoc = Util.jsonArrToLocation("spectatorLoc", object);
+                deathmatchData.startPos1 = Util.jsonArrToBlockVector3("startPlatform1", object);
+                deathmatchData.startPos2 = Util.jsonArrToBlockVector3("startPlatform2", object);
+                deathmatchData.pos1 = Util.jsonArrToBlockVector3("pos1", object);
+                deathmatchData.pos2 = Util.jsonArrToBlockVector3("pos2", object);
+                deathmatchData.arenaSaved = object.get("arenaSaved").toString().equals("true");
+                data = deathmatchData;
+            }
+            else if (type.equals("parkour")) {
+                data = null; //TODO: add
+            }
+            else {
+                return;
+            }
+
+            // Load general attributes
             data.enabled = object.get("enabled").toString().equals("true");
-            data.lobby = JsonArrToLocation("lobby", object);
-            data.spectatorLoc = JsonArrToLocation("spectatorLoc", object);
-            data.startPlatform1 = JsonArrToBlockVector3("startPlatform1", object);
-            data.startPlatform2 = JsonArrToBlockVector3("startPlatform2", object);
-            data.exitLoc = JsonArrToLocation("exitLoc", object);
+            data.lobby = Util.jsonArrToLocation("lobby", object);
+            data.exitLoc = Util.jsonArrToLocation("exitLoc", object);
             MikeyMcPlus.data.gameData.put(data.name, data);
-            player.sendMessage(ChatColor.GOLD + "Loaded " + data.name);
         } catch (ParseException e) {
             e.printStackTrace();
         }
     }
-
-    public static BlockVector3 JsonArrToBlockVector3(String attrib, JSONObject obj) {
-        JSONArray arr = (JSONArray) obj.get(attrib);
-        return BlockVector3.at(Integer.parseInt(arr.get(0).toString()), Integer.parseInt(arr.get(1).toString()), Integer.parseInt(arr.get(2).toString()));
-    }
-
-    public static JSONArray BlockVector3ToJsonArr(BlockVector3 b) {
-        JSONArray arr = new JSONArray();
-        arr.addAll(Arrays.asList(b.getX(), b.getY(), b.getZ()));
-        return arr;
-    }
-
-    public static Location JsonArrToLocation(String attrib, JSONObject obj) {
-        JSONArray arr = (JSONArray) obj.get(attrib);
-        Location l = new Location(MikeyMcPlus.data.currWorld, Integer.parseInt(arr.get(0).toString()), Integer.parseInt(arr.get(1).toString()), Integer.parseInt(arr.get(2).toString()));
-        l.setDirection(new Vector(Integer.parseInt(arr.get(3).toString()), Integer.parseInt(arr.get(4).toString()), Integer.parseInt(arr.get(5).toString())));
-        return l;
-    }
-
-    public static JSONArray LocationToJsonArr(Location l) {
-        JSONArray arr = new JSONArray();
-        arr.addAll(Arrays.asList((int) l.getX(), (int) l.getY(), (int) l.getZ(), (int) l.getDirection().getX(), (int) l.getDirection().getY(), (int) l.getDirection().getZ()));
-        return arr;
-    }
-
-    public static String readAllLines(String path) {
-        try {
-            BufferedReader f = new BufferedReader(new FileReader(path));
-            String line;
-            StringBuilder in = new StringBuilder();
-            while ((line = f.readLine()) != null) {
-                in.append(line);
-            }
-            f.close();
-            return in.toString();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
+    
 }
