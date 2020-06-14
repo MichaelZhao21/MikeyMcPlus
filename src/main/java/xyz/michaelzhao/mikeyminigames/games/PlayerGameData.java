@@ -1,6 +1,7 @@
-package xyz.michaelzhao.mikeymcplus.games;
+package xyz.michaelzhao.mikeyminigames.games;
 
 import org.bukkit.GameMode;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 
@@ -12,12 +13,14 @@ public class PlayerGameData {
     public ItemStack[] oldInventory;
     public Collection<PotionEffect> oldPotionEffects;
     public GameMode oldMode;
+    public int oldExpLvl;
     public PlayerState state;
 
-    public PlayerGameData(ItemStack[] oldInventory, Collection<PotionEffect> potionEffects, GameMode oldMode) {
-        this.oldInventory = oldInventory;
-        this.oldPotionEffects = potionEffects;
-        this.oldMode = oldMode;
+    public PlayerGameData(Player player) {
+        this.oldInventory = player.getInventory().getContents();
+        this.oldPotionEffects = player.getActivePotionEffects();
+        this.oldMode = player.getGameMode();
+        this.oldExpLvl = player.getTotalExperience();
         this.state = PlayerState.LOBBY;
     }
 

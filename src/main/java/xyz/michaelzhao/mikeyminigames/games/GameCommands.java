@@ -1,16 +1,15 @@
-package xyz.michaelzhao.mikeymcplus.games;
+package xyz.michaelzhao.mikeyminigames.games;
 
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.RemoteConsoleCommandSender;
 import org.bukkit.entity.Player;
 
 public class GameCommands implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender commandSender, Command command, String s, String[] args) {
-        if (commandSender instanceof Player) {
+        if (commandSender instanceof Player) { // TODO: generalize to commandsender
             Player player = (Player) commandSender;
 
             if (args.length == 0) {
@@ -32,10 +31,10 @@ public class GameCommands implements CommandExecutor {
                     GameSetup.arenaCommand(player, args);
                     break;
                 case "save":
-                    GameSetup.saveAllGames(player);
+                    GameSetup.saveAllGames(commandSender);
                     break;
                 case "load":
-                    GameSetup.loadAllGames(player);
+                    GameSetup.loadAllGames(commandSender);
                     break;
                 case "enable":
                     GameEngine.enableGame(player, args);
@@ -65,17 +64,6 @@ public class GameCommands implements CommandExecutor {
                 default:
                     return false;
             }
-        }
-        else if (commandSender instanceof RemoteConsoleCommandSender) {
-            RemoteConsoleCommandSender sender = (RemoteConsoleCommandSender) commandSender;
-            // TODO: Add commands allowed to be sent by console
-            if (args.length == 0) {
-                sender.sendMessage("Use " + ChatColor.AQUA + "/games help" + ChatColor.WHITE + " to see commands");
-                return false;
-            }
-
-
-
         }
         return true;
     }

@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus.games;
+package xyz.michaelzhao.mikeyminigames.games;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;

@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus.games;
+package xyz.michaelzhao.mikeyminigames.games;
 
 import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.*;
@@ -10,10 +10,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-import xyz.michaelzhao.mikeymcplus.MikeyMcPlus;
-import xyz.michaelzhao.mikeymcplus.Util;
+import xyz.michaelzhao.mikeyminigames.MikeyMinigames;
+import xyz.michaelzhao.mikeyminigames.Util;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 public class GameEngine { // TODO add change game type
@@ -31,7 +30,7 @@ public class GameEngine { // TODO add change game type
         BlockVector3 blockNotSet = BlockVector3.at(0, 0, 0);
 
         // Get the current game as the base class
-        GameData data = MikeyMcPlus.data.gameData.get(args[1]);
+        GameData data = MikeyMinigames.data.gameData.get(args[1]);
 
         // Define general conditions and errors
         boolean[] generalConditions = new boolean[]{
@@ -79,15 +78,15 @@ public class GameEngine { // TODO add change game type
                 }
             }
         }
-        else if (data instanceof ParkourData) {
+        else if (data instanceof SingleplayerData) {
             // TODO: Fill this in
-            ParkourData parkourData = (ParkourData) data;
+            SingleplayerData singleplayerData = (SingleplayerData) data;
         }
 
         // Enable if there were no errors
         if (noError) {
-            MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame).enabled = true;
-            player.sendMessage(ChatColor.GOLD + MikeyMcPlus.data.toolGame + " enabled!");
+            MikeyMinigames.data.gameData.get(MikeyMinigames.data.toolGame).enabled = true;
+            player.sendMessage(ChatColor.GOLD + MikeyMinigames.data.toolGame + " enabled!");
         }
 
         // TODO: Make checking into functions and convert back to if statements
@@ -135,8 +134,8 @@ public class GameEngine { // TODO add change game type
         if (Util.isArgsIncorrectLength(args, 1, "games disable", player)) return;
 
         // Disable the game and send player message
-        MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame).enabled = false;
-        player.sendMessage(ChatColor.GOLD + MikeyMcPlus.data.toolGame + " disabled");
+        MikeyMinigames.data.gameData.get(MikeyMinigames.data.toolGame).enabled = false;
+        player.sendMessage(ChatColor.GOLD + MikeyMinigames.data.toolGame + " disabled");
     }
 
     /**
@@ -150,7 +149,7 @@ public class GameEngine { // TODO add change game type
         if (Util.isInvalidGame(args[1], player)) return;
 
         // Get generic GameData obj
-        GameData data = MikeyMcPlus.data.gameData.get(args[1]);
+        GameData data = MikeyMinigames.data.gameData.get(args[1]);
 
         // Print out general info w/ header
         player.sendMessage("-----------------------------------");
@@ -221,52 +220,53 @@ public class GameEngine { // TODO add change game type
         if (Util.isInvalidGame(args[1], player)) return;
 
         // Check if player is already in game
-        if (MikeyMcPlus.data.playersInGameList.containsKey(player)) {
-            player.sendMessage(ChatColor.RED + "Already in game " + MikeyMcPlus.data.playersInGameList.get(player));
+        if (MikeyMinigames.data.playersInGameList.containsKey(player)) {
+            player.sendMessage(ChatColor.RED + "Already in game " + MikeyMinigames.data.playersInGameList.get(player));
             return;
         }
 
-        // Gets the data object
-        // TODO: This might change if i figure out another type of game with a lobby
-        DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(args[1]);
-
-        // Make sure the game is enabled
-        if (!data.enabled) {
-            player.sendMessage(ChatColor.RED + "Game not enabled!");
-            return;
-        }
-
-        // Check for stopped state
-        if (data.gameState == GameState.RUNNING) { // TODO: Add join as spectator
-            player.sendMessage(ChatColor.RED + "Game is currently playing");
-            return;
-        }
+        // Get game data object
+        GameData data = MikeyMinigames.data.gameData.get(args[1]);
 
         // Add player to hashmap of players
         data.gamePlayers.put(player.getName(), player);
 
         // Add player data to hashmap
-        data.gamePlayerObjects.put(player.getName(), new PlayerGameData(
-                player.getInventory().getContents(),
-                player.getActivePotionEffects(),
-                player.getGameMode()));
+        data.gamePlayerObjects.put(player.getName(), new PlayerGameData(player));
 
-        // Add player to list of players in a game
-        MikeyMcPlus.data.playersInGameList.put(player, data.name);
+        // Cast to type
+        if (data instanceof DeathmatchData) {
+            DeathmatchData deathmatchData = (DeathmatchData) data;
 
-        // Clear inventory and prepare them for the game
-        player.getInventory().clear();
-        giveKit("spleef", player); // TODO: change kit based on game
-        player.setHealth(20.0);
-        player.setGameMode(GameMode.ADVENTURE);
-        player.teleport(data.lobby);
+            // Make sure the game is enabled
+            if (!deathmatchData.enabled) {
+                player.sendMessage(ChatColor.RED + "Game not enabled!");
+                return;
+            }
 
-        // Send player joined message
-        player.sendMessage(ChatColor.AQUA + "Joined " + ChatColor.GOLD + args[1]);
+            // Check for stopped state
+            if (deathmatchData.gameState == GameState.RUNNING) { // TODO: Add join as spectator
+                player.sendMessage(ChatColor.RED + "Game is currently playing");
+                return;
+            }
 
-        // If the game hasn't begun, start it
-        if (data.gameState == GameState.STOPPED)
-            startLobby(data);
+            // Add player to list of players in a game
+            MikeyMinigames.data.playersInGameList.put(player, deathmatchData.name);
+
+            // Clear inventory and prepare them for the game
+            player.getInventory().clear();
+            giveKit("spleef", player); // TODO: change kit based on game
+            player.setHealth(20.0);
+            player.setGameMode(GameMode.ADVENTURE);
+            player.teleport(deathmatchData.lobby);
+
+            // Send player joined message
+            player.sendMessage(ChatColor.AQUA + "Joined " + ChatColor.GOLD + args[1]);
+
+            // If the game hasn't begun, start it
+            if (deathmatchData.gameState == GameState.STOPPED)
+                startLobby(deathmatchData);
+        }
     }
 
     /**
@@ -289,7 +289,7 @@ public class GameEngine { // TODO add change game type
         if (Util.isInvalidGame(args[1], player)) return;
 
         // Get data object
-        DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(args[1]);
+        DeathmatchData data = (DeathmatchData) MikeyMinigames.data.gameData.get(args[1]);
 
         // Check if the game is in the lobby state
         if (data.gameState != GameState.LOBBY) {
@@ -298,7 +298,7 @@ public class GameEngine { // TODO add change game type
         }
 
         // Cancel timer and start game
-        MikeyMcPlus.instance.getServer().getScheduler().cancelTask(data.timerId);
+        MikeyMinigames.instance.getServer().getScheduler().cancelTask(data.timerId);
         start(args[1]);
     }
 
@@ -308,25 +308,30 @@ public class GameEngine { // TODO add change game type
      */
     public static void start(String gameName) {
         // Get game data object
-        //TODO: add if when more games types are added
-        DeathmatchData data = (DeathmatchData) MikeyMcPlus.data.gameData.get(gameName);
+        GameData data = MikeyMinigames.data.gameData.get(gameName);
 
-        // Set the state to running
-        data.gameState = GameState.RUNNING;
+        // Cast to type
+        if (data instanceof DeathmatchData) {
+            DeathmatchData deathmatchData = (DeathmatchData) data;
 
-        // Create the game stopwatch
-        data.timerId = createTimer(gameName, false, 0, null, "endgame");
+            // Set the state to running
+            deathmatchData.gameState = GameState.RUNNING;
 
-        // Set the playersAlive to the number of players in the game
-        data.playersAlive = data.gamePlayers.size();
+            // Create the game stopwatch
+            deathmatchData.timerId = createTimer(gameName, false, 0, null, "endgame");
 
-        // Prep and teleport each player to the game arena
-        for (Player player : data.gamePlayers.values()) {
-            data.gamePlayerObjects.get(player.getName()).state = PlayerState.GAME;
-            player.setGameMode(GameMode.SURVIVAL);
-            player.setLevel(0);
-            player.teleport(randomSpawn(data.startPos1, data.startPos2));
+            // Set the playersAlive to the number of players in the game
+            deathmatchData.playersAlive = deathmatchData.gamePlayers.size();
+
+            // Prep and teleport each player to the game arena
+            for (Player player : deathmatchData.gamePlayers.values()) {
+                deathmatchData.gamePlayerObjects.get(player.getName()).state = PlayerState.GAME;
+                player.setGameMode(GameMode.SURVIVAL);
+                player.setLevel(0);
+                player.teleport(randomSpawn(deathmatchData.startPos1, deathmatchData.startPos2));
+            }
         }
+
     }
 
     /**
@@ -338,7 +343,7 @@ public class GameEngine { // TODO add change game type
     public static Location randomSpawn(BlockVector3 start, BlockVector3 end) { //TODO: Add facing center
         double x = Math.random() * (end.getX() - start.getX()) + start.getX();
         double z = Math.random() * (end.getZ() - start.getZ()) + start.getZ();
-        return new Location(MikeyMcPlus.data.currWorld, x, start.getY(), z);
+        return new Location(MikeyMinigames.data.currWorld, x, start.getY(), z);
     }
 
     /**
@@ -347,14 +352,14 @@ public class GameEngine { // TODO add change game type
      */
     public static void quit(Player player) {
         // Check to make sure player is in a game
-        if (!MikeyMcPlus.data.playersInGameList.containsKey(player)) {
+        if (!MikeyMinigames.data.playersInGameList.containsKey(player)) {
             player.sendMessage(ChatColor.RED + "Not in a game");
             return;
         }
 
         // Remove player from game and send message
         removeFromGame(player);
-        player.sendMessage(ChatColor.AQUA + "Left game " + ChatColor.GOLD + MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.playersInGameList.get(player)).name);
+        player.sendMessage(ChatColor.AQUA + "Left game " + ChatColor.GOLD + MikeyMinigames.data.gameData.get(MikeyMinigames.data.playersInGameList.get(player)).name);
         //TODO: Add check to see if no players left
     }
 
@@ -364,23 +369,15 @@ public class GameEngine { // TODO add change game type
      */
     public static void removeFromGame(Player player) {
         // Get data object
-        GameData data = MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.playersInGameList.get(player)); // TODO: Fix casting
+        GameData data = MikeyMinigames.data.gameData.get(MikeyMinigames.data.playersInGameList.get(player));
 
         // Get the player data object
-        // Remove players from respective game
-        PlayerGameData pDat;
-        if (data instanceof DeathmatchData) {
-            DeathmatchData deathmatchData = (DeathmatchData) data;
-            pDat = deathmatchData.gamePlayerObjects.get(player.getName());
-            deathmatchData.gamePlayers.remove(player.getName());
-            deathmatchData.gamePlayerObjects.remove(player.getName());
-        }
-        else { //TODO: Add other games
-            return;
-        }
+        PlayerGameData pDat = data.gamePlayerObjects.get(player.getName());
 
-        // Remove player from the list of players in a game
-        MikeyMcPlus.data.playersInGameList.remove(player);
+        // Remove players from the list of players in the game and general list TODO fix this desc
+        data.gamePlayers.remove(player.getName());
+        data.gamePlayerObjects.remove(player.getName());
+        MikeyMinigames.data.playersInGameList.remove(player);
 
         // Restore the player's items
         ItemStack[] items = pDat.oldInventory;
@@ -393,10 +390,10 @@ public class GameEngine { // TODO add change game type
         for (PotionEffect p : pDat.oldPotionEffects)
             player.addPotionEffect(p);
 
-        // Reset gamemode/velocity/xp and teleport them to the exit location
+        // Reset gamemode/xp, set velocity to 0, and teleport them to the exit location
         player.setGameMode(pDat.oldMode);
+        player.setTotalExperience(pDat.oldExpLvl);
         player.setVelocity(new Vector());
-        player.setLevel(0); //TODO: Save/load player experience
         player.teleport(data.exitLoc);
     }
 
@@ -416,7 +413,7 @@ public class GameEngine { // TODO add change game type
                 String winName = winner.getName();
 
                 // Cancel the running timer
-                MikeyMcPlus.instance.getServer().getScheduler().cancelTask(deathmatchData.timerId);
+                MikeyMinigames.instance.getServer().getScheduler().cancelTask(deathmatchData.timerId);
 
                 // Get a list of player names and iterate through them, removing them from the game
                 String[] pm = deathmatchData.gamePlayers.keySet().toArray(new String[0]);
@@ -460,7 +457,7 @@ public class GameEngine { // TODO add change game type
      */
     public static void playerDeath(Player player, String gameName) {
         // Get game data object
-        GameData gameData = MikeyMcPlus.data.gameData.get(gameName);
+        GameData gameData = MikeyMinigames.data.gameData.get(gameName);
 
         // Cast to type
         if (gameData instanceof DeathmatchData) { //TODO Add more conditions
@@ -499,7 +496,7 @@ public class GameEngine { // TODO add change game type
      */
     public static int createTimer(String game, boolean countdown, int seconds, String callback, String fun) {
         // Get game data object
-        GameData gameData = MikeyMcPlus.data.gameData.get(game);
+        GameData gameData = MikeyMinigames.data.gameData.get(game);
 
         // Cast to type
         if (gameData instanceof DeathmatchData) {
@@ -514,7 +511,7 @@ public class GameEngine { // TODO add change game type
             }
 
             // Create and return the timer ID
-            return MikeyMcPlus.instance.getServer().getScheduler().scheduleSyncRepeatingTask(MikeyMcPlus.instance, (() -> runTimer(data, countdown, callback, fun)), 20L, 20L);
+            return MikeyMinigames.instance.getServer().getScheduler().scheduleSyncRepeatingTask(MikeyMinigames.instance, (() -> runTimer(data, countdown, callback, fun)), 20L, 20L);
         }
 
         // TODO: more
@@ -581,7 +578,7 @@ public class GameEngine { // TODO add change game type
             DeathmatchData deathmatchData = (DeathmatchData) data;
 
             // Stop timer
-            MikeyMcPlus.instance.getServer().getScheduler().cancelTask(deathmatchData.timerId);
+            MikeyMinigames.instance.getServer().getScheduler().cancelTask(deathmatchData.timerId);
         }
 
         // Run callback function

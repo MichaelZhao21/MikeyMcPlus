@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus;
+package xyz.michaelzhao.mikeyminigames;
 
 import org.bukkit.*;
 import org.bukkit.command.Command;
@@ -87,6 +87,6 @@ public class FunCommands implements CommandExecutor {
                 .build());
 
         fw.setFireworkMeta(fwm);
-        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(MikeyMcPlus.instance, fw::detonate, 20);
+        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(MikeyMinigames.instance, fw::detonate, 20);
     }
 }

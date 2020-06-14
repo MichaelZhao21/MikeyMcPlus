@@ -1,20 +1,37 @@
-package xyz.michaelzhao.mikeymcplus.games;
+package xyz.michaelzhao.mikeyminigames.games;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import xyz.michaelzhao.mikeymcplus.MikeyMcPlus;
+import xyz.michaelzhao.mikeyminigames.MikeyMinigames;
+import xyz.michaelzhao.mikeyminigames.Util;
+
+import java.io.File;
+import java.util.HashMap;
+
+enum DeathType {NONE, FALLING, HEALTH}
+enum GameState {LOBBY, RUNNING, STOPPED}
 
 public class GameData {
     public Location lobby, exitLoc;
     public String name;
     public boolean enabled;
+    public HashMap<String, Player> gamePlayers;
+    public HashMap<String, PlayerGameData> gamePlayerObjects;
+    public DeathType deathType;
+    public File gameFolder;
 
     public GameData(String name) {
         this.name = name;
         this.enabled = false;
-        this.lobby = new Location(MikeyMcPlus.data.currWorld, 0, 0, 0);
-        this.exitLoc = new Location(MikeyMcPlus.data.currWorld, 0, 0, 0);
+        this.lobby = new Location(MikeyMinigames.data.currWorld, 0, 0, 0);
+        this.exitLoc = new Location(MikeyMinigames.data.currWorld, 0, 0, 0);
+        this.gamePlayers = new HashMap<>();
+        this.gamePlayerObjects = new HashMap<>();
+        this.deathType = DeathType.NONE;
+        this.gameFolder = new File(Util.getSubPath(MikeyMinigames.data.gamesFolder, name));
+        if (!this.gameFolder.exists()) this.gameFolder.mkdir();
+
     }
 
     public String getGameType() { return "base"; }

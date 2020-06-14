@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus;
+package xyz.michaelzhao.mikeyminigames;
 
 import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.ChatColor;
@@ -15,6 +15,38 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class Util {
+    /**
+     * Returns the subfile path given a directory and filename
+     * @param parent the parent directory
+     * @param subName the file name
+     * @return String representing the file path
+     */
+    public static String getSubPath(File parent, String subName) {
+        return parent.getPath() + System.getProperty("file.separator") + subName.replace(' ', '_');
+    }
+    /**
+     * Opens the game file
+     * @param parentFolder the parent directory of the file
+     * @param gameName the name of the game
+     * @return the file object
+     */
+    public static File getFileInDir(File parentFolder, String gameName) {
+        // Creates a file object, replacing spaces with underscores in the game name
+        File gameFile = new File(getSubPath(parentFolder, gameName));
+
+        // Check to see if the file exists and creates one if not
+        if (!gameFile.exists()) {
+            try {
+                gameFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Returns the file object
+        return gameFile;
+    }
+
     /**
      * Parse all lines of a file and compile it into a string
      * for use by a JSONParser object
@@ -67,7 +99,7 @@ public class Util {
      */
     public static Location jsonArrToLocation(String attrib, JSONObject obj) {
         JSONArray arr = (JSONArray) obj.get(attrib);
-        Location l = new Location(MikeyMcPlus.data.currWorld, Integer.parseInt(arr.get(0).toString()), Integer.parseInt(arr.get(1).toString()), Integer.parseInt(arr.get(2).toString()));
+        Location l = new Location(MikeyMinigames.data.currWorld, Integer.parseInt(arr.get(0).toString()), Integer.parseInt(arr.get(1).toString()), Integer.parseInt(arr.get(2).toString()));
         l.setDirection(new Vector(Integer.parseInt(arr.get(3).toString()), Integer.parseInt(arr.get(4).toString()), Integer.parseInt(arr.get(5).toString())));
         return l;
     }
@@ -106,7 +138,7 @@ public class Util {
      * @return if the game was invalid or not
      */
     public static boolean isInvalidGame(String gameName, Player player) {
-        if (!MikeyMcPlus.data.gameData.containsKey(gameName.toLowerCase())) {
+        if (!MikeyMinigames.data.gameData.containsKey(gameName.toLowerCase())) {
             player.sendMessage(ChatColor.RED + "Game " + gameName + " could not be found!");
             return true;
         }

@@ -1,4 +1,4 @@
-package xyz.michaelzhao.mikeymcplus.games;
+package xyz.michaelzhao.mikeyminigames.games;
 
 import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.ChatColor;
@@ -12,7 +12,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
-import xyz.michaelzhao.mikeymcplus.MikeyMcPlus;
+import xyz.michaelzhao.mikeyminigames.MikeyMinigames;
 
 public class GameListener implements Listener {
     @EventHandler
@@ -32,7 +32,7 @@ public class GameListener implements Listener {
             int x = block.getX();
             int y = block.getY();
             int z = block.getZ();
-            DeathmatchData toolData = (DeathmatchData) MikeyMcPlus.data.gameData.get(MikeyMcPlus.data.toolGame); // TODO: Fix casting
+            DeathmatchData toolData = (DeathmatchData) MikeyMinigames.data.gameData.get(MikeyMinigames.data.toolGame); // TODO: Fix casting
             if (action.equals(Action.LEFT_CLICK_BLOCK)) {
                 event.setCancelled(true);
                 player.sendMessage(String.format("%sPos1 set to: (%d, %d, %d)",ChatColor.LIGHT_PURPLE, x, y, z));
@@ -57,7 +57,9 @@ public class GameListener implements Listener {
 
     @EventHandler
     public void onPlayerFallEvent(PlayerMoveEvent e) {
-        if (e.getTo() != null && e.getTo().getY() < 0 && MikeyMcPlus.data.playersInGameList.containsKey(e.getPlayer()))
-            GameEngine.playerDeath(e.getPlayer(), MikeyMcPlus.data.playersInGameList.get(e.getPlayer()));
+        if (e.getTo() != null && e.getTo().getY() < 0 &&
+                MikeyMinigames.data.playersInGameList.containsKey(e.getPlayer()) &&
+                MikeyMinigames.data.gameData.get(MikeyMinigames.data.playersInGameList.get(e.getPlayer())).deathType == DeathType.FALLING)
+            GameEngine.playerDeath(e.getPlayer(), MikeyMinigames.data.playersInGameList.get(e.getPlayer()));
     }
 }
