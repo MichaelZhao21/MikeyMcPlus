@@ -1,6 +1,6 @@
 package xyz.michaelzhao.mikeyminigames.games;
 
-import org.bukkit.ChatColor;
+import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import xyz.michaelzhao.mikeyminigames.MikeyMinigames;
@@ -10,7 +10,10 @@ import java.io.File;
 import java.util.HashMap;
 
 enum DeathType {NONE, FALLING, HEALTH}
+
 enum GameState {LOBBY, RUNNING, STOPPED}
+
+enum GameType {NONE, MULTIPLAYER, TEAM, SINGLEPLAYER}
 
 public class GameData {
     public Location lobby, exitLoc;
@@ -20,6 +23,15 @@ public class GameData {
     public HashMap<String, PlayerGameData> gamePlayerObjects;
     public DeathType deathType;
     public File gameFolder;
+    public BlockVector3 startPos1, startPos2;
+    public Location spectatorLoc;
+    public int timerId, timerCount;
+    public int playersAlive;
+    public GameState gameState;
+    public boolean arenaSaved;
+    public BlockVector3 pos1, pos2;
+    public GameType gameType;
+    public boolean hasArena;
 
     public GameData(String name) {
         this.name = name;
@@ -31,23 +43,44 @@ public class GameData {
         this.deathType = DeathType.NONE;
         this.gameFolder = new File(Util.getSubPath(MikeyMinigames.data.gamesFolder, name));
         if (!this.gameFolder.exists()) this.gameFolder.mkdir();
-
+        this.arenaSaved = false;
+        this.pos1 = BlockVector3.at(0, 0, 0);
+        this.pos2 = BlockVector3.at(0, 0, 0);
+        this.startPos1 = BlockVector3.at(0, 0, 0);
+        this.startPos2 = BlockVector3.at(0, 0, 0);
+        this.spectatorLoc = new Location(MikeyMinigames.data.currWorld, 0, 0, 0);
+        this.timerId = 0;
+        this.gameState = GameState.STOPPED;
+        this.gameType = GameType.NONE;
+        this.hasArena = false;
     }
 
-    public String getGameType() { return "base"; }
-
-    /**
-     * Checks to see if the type entered is valid
-     * @param type - the game type entered
-     * @param player - the player that issued the command
-     * @return - if the game type is valid
-     */
-    public static boolean isValidGameType(String type, Player player) {
-        if (!type.equals("deathmatch") && !type.equals("parkour")) {
-            player.sendMessage(ChatColor.RED + "Invalid game type");
-            player.sendMessage(ChatColor.RED + "Valid game types: deathmatch, parkour");
-            return false;
+    // TODO: javadoc
+    public static String gameTypeToString(GameType type) {
+        switch (type) {
+            case NONE:
+                return "none";
+            case MULTIPLAYER:
+                return "multiplayer";
+            case TEAM:
+                return "team";
+            case SINGLEPLAYER:
+                return "singleplayer";
         }
-        return true;
+        return null;
+    }
+
+    public static GameType stringToGameType(String s) {
+        switch (s) {
+            case "none":
+                return GameType.NONE;
+            case "multiplayer":
+                return GameType.MULTIPLAYER;
+            case "team":
+                return GameType.TEAM;
+            case "singleplayer":
+                return GameType.SINGLEPLAYER;
+        }
+        return null;
     }
 }

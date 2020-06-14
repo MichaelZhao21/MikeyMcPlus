@@ -2,6 +2,7 @@ package xyz.michaelzhao.mikeyminigames.games;
 
 import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.*;
+import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
@@ -14,23 +15,31 @@ import xyz.michaelzhao.mikeyminigames.MikeyMinigames;
 import xyz.michaelzhao.mikeyminigames.Util;
 
 import java.util.Collections;
+import java.util.HashMap;
 
 public class GameEngine { // TODO add change game type
     /**
      * Changes the enabled attribute after checking for setup conditions
-     * @param player the player that issued the command
-     * @param args command arguments
+     *
+     * @param sender the sender that issued the command
+     * @param args   command arguments
      */
-    public static void enableGame(Player player, String[] args) {
+    public static void enableGame(CommandSender sender, String[] args) {
         // Command checking
-        if (Util.isArgsIncorrectLength(args, 2, "games enable <GameName>", player)) return;
-        if (Util.isInvalidGame(args[1], player)) return;
+        if (Util.isArgsIncorrectLength(args, 2, "games enable <GameName>", sender)) return;
+        if (Util.isInvalidGame(args[1], sender)) return;
 
         // Define objects for comparing to the BlockVector3 and Location objects
         BlockVector3 blockNotSet = BlockVector3.at(0, 0, 0);
 
         // Get the current game as the base class
-        GameData data = MikeyMinigames.data.gameData.get(args[1]);
+        GameData data = Util.getData(args[1]);
+
+        // Check to make sure game type is set
+        if (data.gameType == GameType.NONE) {
+            sender.sendMessage(ChatColor.RED + "Game type not set");
+            return;
+        }
 
         // Define general conditions and errors
         boolean[] generalConditions = new boolean[]{
@@ -42,106 +51,68 @@ public class GameEngine { // TODO add change game type
                 "Exit location not set"
         };
 
+        // Define hashmap of specific conditions and errors
+        HashMap<GameType, boolean[]> specialConditions = new HashMap<>();
+        HashMap<GameType, String[]> specialErrors = new HashMap<>();
+
+        // Deathmatch Conditions
+        specialConditions.put(GameType.MULTIPLAYER, new boolean[]{
+                !data.arenaSaved,
+                data.startPos1.equals(blockNotSet) || data.startPos2.equals(blockNotSet),
+                Util.isLocationNotSet(data.spectatorLoc)
+        });
+        specialErrors.put(GameType.MULTIPLAYER, new String[]{
+                "Arena not saved",
+                "Starting platform (2 corners) not set",
+                "Spectator location not set"
+        });
+
         // Make variable to check for errors
         boolean noError = true;
 
         // Loop through general conditions and print error if true
         for (int i = 0; i < generalConditions.length; i++) {
             if (generalConditions[i]) {
-                player.sendMessage(ChatColor.RED + generalErrors[i]);
+                sender.sendMessage(ChatColor.RED + generalErrors[i]);
                 noError = false;
             }
         }
 
-        // Specific conditions and errors
-        if (data instanceof DeathmatchData) {
-            // Cast to DeathmatchData child class
-            DeathmatchData deathmatchData = (DeathmatchData) data;
-
-            // Define conditions and errors for DeathmatchData
-            boolean[] deathmatchConditions = new boolean[]{
-                    !deathmatchData.arenaSaved,
-                    deathmatchData.startPos1.equals(blockNotSet) || deathmatchData.startPos2.equals(blockNotSet),
-                    Util.isLocationNotSet(deathmatchData.spectatorLoc)
-            };
-            String[] deathmatchErrors = new String[]{
-                "Arena not saved",
-                "Starting platform (2 corners) not set",
-                "Spectator location not set"
-            };
-
-            // Loop through deathmatch conditions/errors
-            for (int i = 0; i < deathmatchConditions.length; i++) {
-                if (deathmatchConditions[i]) {
-                    player.sendMessage(ChatColor.RED + deathmatchErrors[i]);
-                    noError = false;
-                }
+        // Loop through specific conditions and print error if true
+        for (int i = 0; i < specialConditions.get(data.gameType).length; i++) {
+            if (specialConditions.get(data.gameType)[i]) {
+                sender.sendMessage(ChatColor.RED + specialErrors.get(data.gameType)[i]);
+                noError = false;
             }
-        }
-        else if (data instanceof SingleplayerData) {
-            // TODO: Fill this in
-            SingleplayerData singleplayerData = (SingleplayerData) data;
         }
 
         // Enable if there were no errors
         if (noError) {
-            MikeyMinigames.data.gameData.get(MikeyMinigames.data.toolGame).enabled = true;
-            player.sendMessage(ChatColor.GOLD + MikeyMinigames.data.toolGame + " enabled!");
+            Util.getData(MikeyMinigames.data.toolGame).enabled = true;
+            sender.sendMessage(ChatColor.GOLD + MikeyMinigames.data.toolGame + " enabled!");
         }
-
-        // TODO: Make checking into functions and convert back to if statements
-//        // Create hashmaps to store game type specific conditions and errors
-//        HashMap<String, boolean[]> specificConditions = new HashMap<>();
-//        HashMap<String, String[]> specificErrors = new HashMap<>();
-//
-//        // Deathmatch conditions/errors
-//        specificConditions.put("deathmatch", new boolean[]{
-//                !curr.arenaSaved,
-//                curr.startPos1.equals(blockNotSet) || curr.startPos2.equals(blockNotSet),
-//                data.spectatorLoc.equals(Util.locationNotSet())
-//        });
-//        specificErrors.put("parkour", new String[]{
-//                "Arena not saved",
-//                "Starting platform (2 corners) not set"
-//        });
-//
-//        if (data instanceof DeathmatchData) { // TODO: create template function
-//            for (int i = 0; i < specificConditions.get("deathmatch").length; i++) {
-//                if (specificConditions.get("deathmatch")[i]) {
-//                    player.sendMessage(ChatColor.RED + specificErrors.get("deathmatch")[i]);
-//                    noError = false;
-//                }
-//            }
-//        }
-//        else if (data instanceof ParkourData) {
-//
-//            for (int i = 0; i < specificConditions.get("parkour").length; i++) {
-//                if (specificConditions.get("parkour")[i]) {
-//                    player.sendMessage(ChatColor.RED + specificErrors.get("parkour")[i]);
-//                    noError = false;
-//                }
-//            }
-//        }
     }
 
     /**
      * Disables the game after checking to make sure the game isn't currently disabled
+     *
      * @param player the player that issued the command
-     * @param args command arguments
+     * @param args   command arguments
      */
     public static void disableGame(Player player, String[] args) {
         // Check args
         if (Util.isArgsIncorrectLength(args, 1, "games disable", player)) return;
 
         // Disable the game and send player message
-        MikeyMinigames.data.gameData.get(MikeyMinigames.data.toolGame).enabled = false;
+        Util.getData(MikeyMinigames.data.toolGame).enabled = false;
         player.sendMessage(ChatColor.GOLD + MikeyMinigames.data.toolGame + " disabled");
     }
 
     /**
      * Prints out info for the data object
+     *
      * @param player the player that issued the command
-     * @param args command arguments
+     * @param args   command arguments
      */
     public static void info(Player player, String[] args) {
         // Check command
@@ -149,7 +120,7 @@ public class GameEngine { // TODO add change game type
         if (Util.isInvalidGame(args[1], player)) return;
 
         // Get generic GameData obj
-        GameData data = MikeyMinigames.data.gameData.get(args[1]);
+        GameData data = Util.getData(args[1]);
 
         // Print out general info w/ header
         player.sendMessage("-----------------------------------");
@@ -157,20 +128,21 @@ public class GameEngine { // TODO add change game type
         player.sendMessage("Enabled: " + data.enabled);
         player.sendMessage(Util.coordsToString("Lobby", data.lobby));
         player.sendMessage(Util.coordsToString("Exit Location", data.exitLoc));
+        player.sendMessage("Arena Enabled: " + data.hasArena);
+        player.sendMessage(Util.coordsToString("Spectator Location", data.spectatorLoc));
+        player.sendMessage(String.format("Spawning area: (%d, %d, %d) to (%d, %d, %d)", data.startPos1.getX(), data.startPos1.getY(), data.startPos1.getZ(), data.startPos2.getX(), data.startPos2.getY(), data.startPos2.getZ()));
 
-        // Convert to specific type and print specific info
-        if (data instanceof DeathmatchData) {
-            DeathmatchData death = (DeathmatchData) data;
-            player.sendMessage("Arena Saved: " + death.arenaSaved);
-            player.sendMessage(String.format("Arena area: (%d, %d, %d) to (%d, %d, %d)", death.pos1.getX(), death.pos1.getY(), death.pos1.getZ(), death.pos2.getX(), death.pos2.getY(), death.pos2.getZ()));
-            player.sendMessage(Util.coordsToString("Spectator Location", death.spectatorLoc));
-            player.sendMessage(String.format("Spawning area: (%d, %d, %d) to (%d, %d, %d)", death.startPos1.getX(), death.startPos1.getY(), death.startPos1.getZ(), death.startPos2.getX(), death.startPos2.getY(), death.startPos2.getZ()));    
+        // Print arena data
+        // TODO: split by game type
+        if (data.hasArena) {
+            player.sendMessage("Arena Saved: " + data.arenaSaved);
+            player.sendMessage(String.format("Arena area: (%d, %d, %d) to (%d, %d, %d)", data.pos1.getX(), data.pos1.getY(), data.pos1.getZ(), data.pos2.getX(), data.pos2.getY(), data.pos2.getZ()));
         }
-        
+
         // Bottom line
         player.sendMessage("-----------------------------------");
     }
-    
+
     public static void kit(Player player, String[] args) { // TODO: fix :((
         String em = ChatColor.RED + "Usage: /games kit <spleef |>";
         if (args.length != 2 || !args[1].equals("spleef")) {
@@ -182,7 +154,8 @@ public class GameEngine { // TODO add change game type
 
     /**
      * Gives the kit specified to the player
-     * @param type the type of kit to get
+     *
+     * @param type   the type of kit to get
      * @param player the player to give the kit to
      */
     public static void giveKit(String type, Player player) {
@@ -210,9 +183,10 @@ public class GameEngine { // TODO add change game type
     }
 
     /**
-     * Joins a multiplayer game lobby
+     * Joins a game lobby
+     *
      * @param player the player who issued the command
-     * @param args command arguments
+     * @param args   command arguments
      */
     public static void joinGame(Player player, String[] args) {
         // Check commands
@@ -226,7 +200,7 @@ public class GameEngine { // TODO add change game type
         }
 
         // Get game data object
-        GameData data = MikeyMinigames.data.gameData.get(args[1]);
+        GameData data = Util.getData(args[1]);
 
         // Add player to hashmap of players
         data.gamePlayers.put(player.getName(), player);
@@ -234,62 +208,62 @@ public class GameEngine { // TODO add change game type
         // Add player data to hashmap
         data.gamePlayerObjects.put(player.getName(), new PlayerGameData(player));
 
-        // Cast to type
-        if (data instanceof DeathmatchData) {
-            DeathmatchData deathmatchData = (DeathmatchData) data;
 
-            // Make sure the game is enabled
-            if (!deathmatchData.enabled) {
-                player.sendMessage(ChatColor.RED + "Game not enabled!");
-                return;
-            }
-
-            // Check for stopped state
-            if (deathmatchData.gameState == GameState.RUNNING) { // TODO: Add join as spectator
-                player.sendMessage(ChatColor.RED + "Game is currently playing");
-                return;
-            }
-
-            // Add player to list of players in a game
-            MikeyMinigames.data.playersInGameList.put(player, deathmatchData.name);
-
-            // Clear inventory and prepare them for the game
-            player.getInventory().clear();
-            giveKit("spleef", player); // TODO: change kit based on game
-            player.setHealth(20.0);
-            player.setGameMode(GameMode.ADVENTURE);
-            player.teleport(deathmatchData.lobby);
-
-            // Send player joined message
-            player.sendMessage(ChatColor.AQUA + "Joined " + ChatColor.GOLD + args[1]);
-
-            // If the game hasn't begun, start it
-            if (deathmatchData.gameState == GameState.STOPPED)
-                startLobby(deathmatchData);
+        // Make sure the game is enabled
+        if (!data.enabled) {
+            player.sendMessage(ChatColor.RED + "Game not enabled!");
+            return;
         }
+
+        // Add player to list of players in a game
+        MikeyMinigames.data.playersInGameList.put(player, data.name);
+
+        // TODO: add check for lobby
+
+        // Check for stopped state
+        if (data.gameState == GameState.RUNNING) { // TODO: Add join as spectator
+            player.sendMessage(ChatColor.RED + "Game is currently playing");
+            return;
+        }
+
+        // Clear inventory and prepare them for the game
+        player.getInventory().clear();
+        giveKit("spleef", player); // TODO: change kit based on game
+        player.setHealth(20.0);
+        player.setGameMode(GameMode.ADVENTURE);
+        player.teleport(data.lobby);
+
+        // Send player joined message
+        player.sendMessage(ChatColor.AQUA + "Joined " + ChatColor.GOLD + args[1]);
+
+        // If the game hasn't begun, start it
+        if (data.gameState == GameState.STOPPED)
+            startLobby(data);
     }
 
     /**
-     * Start the lobby of the multiplayer game
+     * Start the lobby
+     *
      * @param data the game data
      */
-    public static void startLobby(DeathmatchData data) {
+    public static void startLobby(GameData data) {
         data.timerId = createTimer(data.name, true, 30, "start", null);
         data.gameState = GameState.LOBBY;
     }
 
     /**
      * Command to autostart the game
+     *
      * @param player the player that issued the command
-     * @param args command arguments
+     * @param args   command arguments
      */
     public static void startCall(Player player, String[] args) {
         // Check command
         if (Util.isArgsIncorrectLength(args, 2, "games start <GameName>", player)) return;
         if (Util.isInvalidGame(args[1], player)) return;
 
-        // Get data object
-        DeathmatchData data = (DeathmatchData) MikeyMinigames.data.gameData.get(args[1]);
+        // Get game data object
+        GameData data = Util.getData(args[1]);
 
         // Check if the game is in the lobby state
         if (data.gameState != GameState.LOBBY) {
@@ -304,41 +278,39 @@ public class GameEngine { // TODO add change game type
 
     /**
      * Start the game
+     *
      * @param gameName the name of the game
      */
     public static void start(String gameName) {
         // Get game data object
-        GameData data = MikeyMinigames.data.gameData.get(gameName);
+        GameData data = Util.getData(gameName);
 
-        // Cast to type
-        if (data instanceof DeathmatchData) {
-            DeathmatchData deathmatchData = (DeathmatchData) data;
+        // TODO: Add cases for game types
 
-            // Set the state to running
-            deathmatchData.gameState = GameState.RUNNING;
+        // Set the state to running
+        data.gameState = GameState.RUNNING;
 
-            // Create the game stopwatch
-            deathmatchData.timerId = createTimer(gameName, false, 0, null, "endgame");
+        // Create the game stopwatch
+        data.timerId = createTimer(gameName, false, 0, null, "endgame");
 
-            // Set the playersAlive to the number of players in the game
-            deathmatchData.playersAlive = deathmatchData.gamePlayers.size();
+        // Set the playersAlive to the number of players in the game
+        data.playersAlive = data.gamePlayers.size();
 
-            // Prep and teleport each player to the game arena
-            for (Player player : deathmatchData.gamePlayers.values()) {
-                deathmatchData.gamePlayerObjects.get(player.getName()).state = PlayerState.GAME;
-                player.setGameMode(GameMode.SURVIVAL);
-                player.setLevel(0);
-                player.teleport(randomSpawn(deathmatchData.startPos1, deathmatchData.startPos2));
-            }
+        // Prep and teleport each player to the game arena
+        for (Player player : data.gamePlayers.values()) {
+            data.gamePlayerObjects.get(player.getName()).state = PlayerState.GAME;
+            player.setGameMode(GameMode.SURVIVAL);
+            player.setLevel(0);
+            player.teleport(randomSpawn(data.startPos1, data.startPos2));
         }
-
     }
 
     /**
      * Generates a random starting point from 2 corners
+     *
      * @param start lowest-coordinate-valued corner
-     * @param end highest-coordinate-valued corner
-     * @return the Location object representing spawn  \point
+     * @param end   highest-coordinate-valued corner
+     * @return the Location object representing spawn point
      */
     public static Location randomSpawn(BlockVector3 start, BlockVector3 end) { //TODO: Add facing center
         double x = Math.random() * (end.getX() - start.getX()) + start.getX();
@@ -348,6 +320,7 @@ public class GameEngine { // TODO add change game type
 
     /**
      * Player leaves game
+     *
      * @param player the player that issued the command
      */
     public static void quit(Player player) {
@@ -359,17 +332,18 @@ public class GameEngine { // TODO add change game type
 
         // Remove player from game and send message
         removeFromGame(player);
-        player.sendMessage(ChatColor.AQUA + "Left game " + ChatColor.GOLD + MikeyMinigames.data.gameData.get(MikeyMinigames.data.playersInGameList.get(player)).name);
+        player.sendMessage(ChatColor.AQUA + "Left game " + ChatColor.GOLD + Util.getData(MikeyMinigames.data.playersInGameList.get(player)).name);
         //TODO: Add check to see if no players left
     }
 
     /**
      * Runs commands to remove the player from the game
+     *
      * @param player the player that issued the command
      */
     public static void removeFromGame(Player player) {
         // Get data object
-        GameData data = MikeyMinigames.data.gameData.get(MikeyMinigames.data.playersInGameList.get(player));
+        GameData data = Util.getData(MikeyMinigames.data.playersInGameList.get(player));
 
         // Get the player data object
         PlayerGameData pDat = data.gamePlayerObjects.get(player.getName());
@@ -399,153 +373,127 @@ public class GameEngine { // TODO add change game type
 
     /**
      * Checks to see if the game ends based on specific conditions
+     *
      * @param data the game data object
      */
     public static void checkForEndGame(GameData data) {
-        // Cast to type
-        if (data instanceof DeathmatchData) {
-            DeathmatchData deathmatchData = (DeathmatchData) data;
+        // For deathmatches, check to see if only one player is alive
+        if (data.playersAlive == 1) {
+            // Set them as winner and get their name
+            Player winner = getWinner(data);
+            String winName = winner.getName();
 
-            // For deathmatches, check to see if only one player is alive
-            if (deathmatchData.playersAlive == 1) {
-                // Set them as winner and get their name
-                Player winner = getWinner(deathmatchData);
-                String winName = winner.getName();
+            // Cancel the running timer
+            MikeyMinigames.instance.getServer().getScheduler().cancelTask(data.timerId);
 
-                // Cancel the running timer
-                MikeyMinigames.instance.getServer().getScheduler().cancelTask(deathmatchData.timerId);
+            // Get a list of player names and iterate through them, removing them from the game
+            String[] pm = data.gamePlayers.keySet().toArray(new String[0]);
+            for (String p : pm) {
+                Player player = data.gamePlayers.get(p);
+                removeFromGame(player);
 
-                // Get a list of player names and iterate through them, removing them from the game
-                String[] pm = deathmatchData.gamePlayers.keySet().toArray(new String[0]);
-                for (String p : pm) {
-                    Player player = deathmatchData.gamePlayers.get(p);
-                    removeFromGame(player);
-
-                    // Show all players who won the game
-                    player.sendTitle(String.format("%s won %s!", ChatColor.GOLD + winName, ChatColor.AQUA + deathmatchData.name), "", 10, 60, 20);
-                }
-
-                // Reload destroyed arena, reset timer count, and set game state to stopped
-                GameSetup.loadArena(deathmatchData);
-                deathmatchData.timerCount = 0;
-                deathmatchData.gameState = GameState.STOPPED;
+                // Show all players who won the game
+                player.sendTitle(String.format("%s won %s!", ChatColor.GOLD + winName, ChatColor.AQUA + data.name), "", 10, 60, 20);
             }
+
+            // Reload destroyed arena, reset timer count, and set game state to stopped
+            GameSetup.loadArena(data);
+            data.timerCount = 0;
+            data.gameState = GameState.STOPPED;
         }
     }
 
     /**
      * Finds the winner from the list of players in a game
+     *
      * @param data the game data
      * @return the Player object representing the winner
      */
     public static Player getWinner(GameData data) {
-        // Cast to game type
-        if (data instanceof DeathmatchData) {
-            DeathmatchData deathmatchData = (DeathmatchData) data;
-            for (Player p : deathmatchData.gamePlayers.values())
-                if (deathmatchData.gamePlayerObjects.get(p.getName()).state == PlayerState.GAME)
-                    return p;
-        }
+        for (Player p : data.gamePlayers.values())
+            if (data.gamePlayerObjects.get(p.getName()).state == PlayerState.GAME)
+                return p;
         return null;
     }
 
     /**
      * Runs when the player dies: Normally health below 0 or y-level below 0
      * Is called on event listener
-     * @param player the player that died
+     *
+     * @param player   the player that died
      * @param gameName the name of the game
      */
     public static void playerDeath(Player player, String gameName) {
         // Get game data object
-        GameData gameData = MikeyMinigames.data.gameData.get(gameName);
+        GameData data = Util.getData(gameName);
 
-        // Cast to type
-        if (gameData instanceof DeathmatchData) { //TODO Add more conditions
-            DeathmatchData data = (DeathmatchData) gameData;
+        // Check to see if the game is running and the player is in the current game
+        if (data.gameState == GameState.RUNNING && data.gamePlayerObjects.get(player.getName()).state == PlayerState.GAME) {
+            // Set the player's state to spectator and decrease players alive counter
+            data.gamePlayerObjects.get(player.getName()).state = PlayerState.SPECTATOR;
+            data.playersAlive--;
 
-            // Check to see if the game is running and the player is in the current game
-            if (data.gameState == GameState.RUNNING && data.gamePlayerObjects.get(player.getName()).state == PlayerState.GAME) {
-                // Set the player's state to spectator and decrease players alive counter
-                data.gamePlayerObjects.get(player.getName()).state = PlayerState.SPECTATOR;
-                data.playersAlive--;
+            // Tell the player they died and change them to a spectator
+            player.sendTitle("You died!", "You lasted " + data.timerCount + " seconds", 10, 60, 20);
+            player.setGameMode(GameMode.SPECTATOR);
+            player.getInventory().clear();
+            player.teleport(data.spectatorLoc);
 
-                // Tell the player they died and change them to a spectator
-                player.sendTitle("You died!", "You lasted " + data.timerCount + " seconds", 10, 60, 20);
-                player.setGameMode(GameMode.SPECTATOR);
-                player.getInventory().clear();
-                player.teleport(data.spectatorLoc);
+            // Check to see if that death caused the winning condition
+            checkForEndGame(data);
 
-                // Check to see if that death caused the winning condition
-                checkForEndGame(data);
-
-                // Notify all players that the current player died
-                for (Player p : data.gamePlayers.values())
-                    p.sendMessage(ChatColor.AQUA + player.getName() + " died! " + ChatColor.LIGHT_PURPLE + data.playersAlive + " players remaining.");
-            }
+            // Notify all players that the current player died
+            for (Player p : data.gamePlayers.values())
+                p.sendMessage(ChatColor.AQUA + player.getName() + " died! " + ChatColor.LIGHT_PURPLE + data.playersAlive + " players remaining.");
         }
     }
 
     /**
      * Creates the game timer and stores it in the game's timer object
-     * @param game the name of hte game
+     *
+     * @param game      the name of hte game
      * @param countdown if the timer is a countdown or stopwatch
-     * @param seconds number of seconds if it is a countdown
-     * @param callback function to run after countdown ends
-     * @param fun function to run while the command runs (see timerFun)
+     * @param seconds   number of seconds if it is a countdown
+     * @param callback  function to run after countdown ends
+     * @param fun       function to run while the command runs (see timerFun)
      * @return the ID of the timer
      */
     public static int createTimer(String game, boolean countdown, int seconds, String callback, String fun) {
         // Get game data object
-        GameData gameData = MikeyMinigames.data.gameData.get(game);
+        GameData data = Util.getData(game);
 
-        // Cast to type
-        if (gameData instanceof DeathmatchData) {
-            DeathmatchData data = (DeathmatchData) gameData;
+        // Store timer value in timerCount
+        data.timerCount = (countdown ? seconds : 0);
 
-            // Store timer value in timerCount
-            data.timerCount = (countdown ? seconds : 0);
-
-            // Iterate through players and set their xp bar level as the timer value
-            for (Player p : data.gamePlayers.values()) {
-                p.setLevel(data.timerCount);
-            }
-
-            // Create and return the timer ID
-            return MikeyMinigames.instance.getServer().getScheduler().scheduleSyncRepeatingTask(MikeyMinigames.instance, (() -> runTimer(data, countdown, callback, fun)), 20L, 20L);
+        // Iterate through players and set their xp bar level as the timer value
+        for (Player p : data.gamePlayers.values()) {
+            p.setLevel(data.timerCount);
         }
 
-        // TODO: more
-        return -1;
+        // Create and return the timer ID
+        return MikeyMinigames.instance.getServer().getScheduler().scheduleSyncRepeatingTask(MikeyMinigames.instance, (() -> runTimer(data, countdown, callback, fun)), 20L, 20L);
     }
 
     /**
      * Runnable function inside of the timer
-     * @param data the game data object
+     *
+     * @param data      the game data object
      * @param countdown if the timer is a countdown or stopwatch
-     * @param callback function to run after countdown ends
-     * @param fun function to run while the command runs (see timerFun)
+     * @param callback  function to run after countdown ends
+     * @param fun       function to run while the command runs (see timerFun)
      */
     public static void runTimer(GameData data, boolean countdown, String callback, String fun) {
         // Decrement/increment timer
-        int timerChange = countdown ? -1 : 1;
+        data.timerCount += countdown ? -1 : 1;
 
-        // Cast to type
-        // TODO: Add more
-        if (data instanceof DeathmatchData) {
-            DeathmatchData deathmatchData = (DeathmatchData) data;
+        // Check for when the timer runs out
+        if (data.timerCount == 0) {
+            timerEnd(callback, data);
+        }
 
-            // Change the stored timer value
-            deathmatchData.timerCount += timerChange;
-
-            // Check for when the timer runs out
-            if (deathmatchData.timerCount == 0) {
-                timerEnd(callback, deathmatchData);
-            }
-
-            // Set XP bar to display timer for all game players
-            for (Player p : deathmatchData.gamePlayers.values()) {
-                p.setLevel(deathmatchData.timerCount);
-            }
+        // Set XP bar to display timer for all game players
+        for (Player p : data.gamePlayers.values()) {
+            p.setLevel(data.timerCount);
         }
 
         // Run timer functions
@@ -555,7 +503,8 @@ public class GameEngine { // TODO add change game type
 
     /**
      * Runs the timer function based on the name
-     * @param fun name of the function
+     *
+     * @param fun  name of the function
      * @param data the game data object
      */
     public static void timerFun(String fun, GameData data) {
@@ -569,17 +518,13 @@ public class GameEngine { // TODO add change game type
 
     /**
      * Ends the timer and runs the callback function
+     *
      * @param callback the name of the callback function
-     * @param data the game data object
+     * @param data     the game data object
      */
     public static void timerEnd(String callback, GameData data) {
-        // Cast to type
-        if (data instanceof DeathmatchData) {
-            DeathmatchData deathmatchData = (DeathmatchData) data;
-
-            // Stop timer
-            MikeyMinigames.instance.getServer().getScheduler().cancelTask(deathmatchData.timerId);
-        }
+        // Stop timer
+        MikeyMinigames.instance.getServer().getScheduler().cancelTask(data.timerId);
 
         // Run callback function
         switch (callback) {

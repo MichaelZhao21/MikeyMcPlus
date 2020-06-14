@@ -13,7 +13,7 @@ public class GameSetupTabCompletion implements TabCompleter {
     public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args) {
         if (command.getName().equalsIgnoreCase("games") && args.length == 1 && commandSender instanceof Player) {
             return Arrays.asList("add", "list", "arena", "load",
-                    "save",  "tool", "enable", "api", "setpos",
+                    "save", "tool", "enable", "api", "setpos",
                     "join", "quit");
         }
         // TODO: add advanced tab complete

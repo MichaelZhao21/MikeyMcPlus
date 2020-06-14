@@ -32,14 +32,13 @@ public class GameListener implements Listener {
             int x = block.getX();
             int y = block.getY();
             int z = block.getZ();
-            DeathmatchData toolData = (DeathmatchData) MikeyMinigames.data.gameData.get(MikeyMinigames.data.toolGame); // TODO: Fix casting
+            GameData toolData = MikeyMinigames.data.gameData.get(MikeyMinigames.data.toolGame);
             if (action.equals(Action.LEFT_CLICK_BLOCK)) {
                 event.setCancelled(true);
-                player.sendMessage(String.format("%sPos1 set to: (%d, %d, %d)",ChatColor.LIGHT_PURPLE, x, y, z));
+                player.sendMessage(String.format("%sPos1 set to: (%d, %d, %d)", ChatColor.LIGHT_PURPLE, x, y, z));
                 toolData.pos1 = BlockVector3.at(x, y, z);
-            }
-            else {
-                player.sendMessage(String.format("%sPos2 set to: (%d, %d, %d)",ChatColor.LIGHT_PURPLE, x, y, z));
+            } else {
+                player.sendMessage(String.format("%sPos2 set to: (%d, %d, %d)", ChatColor.LIGHT_PURPLE, x, y, z));
                 toolData.pos2 = BlockVector3.at(x, y, z);
             }
         }

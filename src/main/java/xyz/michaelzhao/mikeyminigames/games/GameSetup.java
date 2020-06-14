@@ -33,15 +33,13 @@ import java.util.Arrays;
 public class GameSetup {
     /**
      * Creates a new game with a game name and type
+     *
      * @param player player that issued the command
-     * @param args command arguments
+     * @param args   command arguments
      */
     public static void newGame(Player player, String[] args) {
-        //Check args
-        if (Util.isArgsIncorrectLength(args, 3, "Usage: /games add <Game Name> <deathmatch|parkour>", player)) return;
-
-        // All game names are lowercase
-        args[1] = args[1].toLowerCase();
+        // Check args
+        if (Util.isArgsIncorrectLength(args, 3, "Usage: /games add <Game Name>", player)) return;
 
         // Check if the game exists
         if (MikeyMinigames.data.gameData.containsKey(args[1])) {
@@ -49,17 +47,8 @@ public class GameSetup {
             return;
         }
 
-        // Check for valid game type
-        if (!GameData.isValidGameType(args[2], player)) return;
-
-        // Create general data object and child class // TODO: fix this description
-        GameData data;
-        if (args[2].equals("deathmatch"))
-            data = new DeathmatchData(args[1]);
-        else if (args[2].equals("parkour"))
-            data = new SingleplayerData(args[1]);
-        else
-            return;
+        // Create data object
+        GameData data = new GameData(args[1]);
 
         // Add to hashmap and send added message
         MikeyMinigames.data.gameData.put(args[1], data);
@@ -71,8 +60,9 @@ public class GameSetup {
 
     /**
      * Gives the arena selection tool to the player
+     *
      * @param player player that issued the command
-     * @param args command arguments
+     * @param args   command arguments
      */
     public static void giveTool(Player player, String[] args) {
         // Check command
@@ -98,6 +88,7 @@ public class GameSetup {
 
     /**
      * List out the games currently avaliable
+     *
      * @param player player that issued the command
      */
     public static void list(Player player, String[] args) {
@@ -121,15 +112,15 @@ public class GameSetup {
 
     /**
      * Set position
+     *
      * @param player player that issued the command
-     * @param args command arguments
+     * @param args   command arguments
      */
     public static void setPos(Player player, String[] args) { // TODO: put this on the tool
-        DeathmatchData data = (DeathmatchData) MikeyMinigames.data.gameData.get(MikeyMinigames.data.toolGame); // TODO: Fix casting
+        GameData data = Util.getData(MikeyMinigames.data.toolGame);
         if (args.length != 2) {
             player.sendMessage(ChatColor.RED + "Usage: /games setPos <lobby | startPlatform1 | startPlatform2 | spectatorLoc | exitLoc>");
-        }
-        else if (args[1].equals("lobby") || args[1].equals("startPlatform1") || args[1].equals("startPlatform2") || args[1].equals("spectatorLoc") || args[1].equals("exitLoc")) {
+        } else if (args[1].equals("lobby") || args[1].equals("startPlatform1") || args[1].equals("startPlatform2") || args[1].equals("spectatorLoc") || args[1].equals("exitLoc")) {
             Location loc = player.getLocation();
             BlockVector3 pos = BlockVector3.at(loc.getX(), loc.getY(), loc.getZ());
             switch (args[1]) {
@@ -150,37 +141,37 @@ public class GameSetup {
                     break;
             }
             player.sendMessage(ChatColor.GOLD + args[1] + " position set!");
-        }
-        else {
+        } else {
             player.sendMessage(ChatColor.RED + "Invalid set position, use <lobby | startPlatform1 | startPlatform2 | spectatorLoc | exitLoc>");
         }
     }
 
     /**
      * Player runs arena command
+     *
      * @param player player that issued the command
-     * @param args command arguments
+     * @param args   command arguments
      */
     public static void arenaCommand(Player player, String[] args) {
         // Check command
         if (Util.isArgsIncorrectLength(args, 3, "games arena <save | load> <Game Name>", player)) return;
         if (Util.isInvalidGame(args[2], player)) return;
 
-        // All game names lowercase
-        args[2] = args[2].toLowerCase();
+        // Get game data
+        GameData data = Util.getData(args[2]);
 
-        // Get data and make sure it's the right type
-        GameData dataObj = MikeyMinigames.data.gameData.get(args[2]);
-        if (!(dataObj instanceof DeathmatchData)) {
-            player.sendMessage(ChatColor.RED + "Game mode " + dataObj.getGameType() + " does not have an arena");
+        // Check to see if arena is enabled
+        if (!data.hasArena) {
+            player.sendMessage(ChatColor.RED + "Game " + data.name + " doesn't have arena enabled");
+            return;
         }
 
         // Check operation and run method if valid
         if (args[1].equals("save"))
-            saveArena(player, dataObj);
+            saveArena(player, data);
         else if (args[1].equals("load"))
-            loadArena(dataObj);
-        else { // TODO: Make this error message more logical ?(move before game mode error)
+            loadArena(data);
+        else {
             player.sendMessage(ChatColor.RED + "Unknown operation" + args[2]);
             player.sendMessage(ChatColor.RED + "Usage: /games arena <save | load> <Game Name>");
         }
@@ -188,13 +179,12 @@ public class GameSetup {
 
     /**
      * Saves the arena
+     *
      * @param player player that issued the command
-     * @param gameData the game object base class
+     * @param data   the game object base class
      */
-    public static void saveArena(Player player, GameData gameData) {
-        // Cast to correct type
-        DeathmatchData data = (DeathmatchData) gameData;
-
+    public static void saveArena(Player player, GameData data) {
+        // TODO: update corners when saving
         // Get the region object from position 1 and 2
         CuboidRegion region = new CuboidRegion(BukkitAdapter.adapt(MikeyMinigames.data.currWorld), data.pos1, data.pos2);
         data.arenaSaved = true;
@@ -234,12 +224,10 @@ public class GameSetup {
 
     /**
      * Loads the arena
-     * @param gameData the game object base class
+     *
+     * @param data the game object base class
      */
-    public static void loadArena(GameData gameData) {
-        // Convert to correct type
-        DeathmatchData data = (DeathmatchData) gameData;
-
+    public static void loadArena(GameData data) {
         // Create clipboard from file
         File gameFile = Util.getFileInDir(data.gameFolder, data.name + ".arena");
         ClipboardFormat format = ClipboardFormats.findByFile(gameFile);
@@ -265,6 +253,7 @@ public class GameSetup {
 
     /**
      * Runs the save command on all games and creates a global games json file to reference
+     *
      * @param sender player/console that issued the command
      */
     public static void saveAllGames(CommandSender sender) {
@@ -294,30 +283,27 @@ public class GameSetup {
 
     /**
      * Saves single game to its own file in the games folder
+     *
      * @param gameName the name of the game
      */
     public static void saveGame(String gameName) {
         // Get game data and create output object
-        GameData gameData = MikeyMinigames.data.gameData.get(gameName);
+        GameData data = Util.getData(gameName);
         JSONObject out = new JSONObject();
 
         // Add general data
-        out.put("gameType", gameData.getGameType());
-        out.put("name", gameData.name);
-        out.put("enabled", gameData.enabled);
-        out.put("lobby", Util.locationToJsonArr(gameData.lobby));
-        out.put("exitLoc", Util.locationToJsonArr(gameData.exitLoc));
-
-        // Add game type specific data
-        if (gameData instanceof DeathmatchData) {
-            DeathmatchData deathmatchData = (DeathmatchData) gameData;
-            out.put("pos1", Util.blockVector3ToJsonArr(deathmatchData.pos1));
-            out.put("pos2", Util.blockVector3ToJsonArr(deathmatchData.pos2));
-            out.put("arenaSaved", deathmatchData.arenaSaved);
-            out.put("spectatorLoc", Util.locationToJsonArr(deathmatchData.spectatorLoc));
-            out.put("startPlatform1", Util.blockVector3ToJsonArr(deathmatchData.startPos1));
-            out.put("startPlatform2", Util.blockVector3ToJsonArr(deathmatchData.startPos2));
-        }
+        // TODO: update save data
+        out.put("name", data.name);
+        out.put("enabled", data.enabled);
+        out.put("lobby", Util.locationToJsonArr(data.lobby));
+        out.put("exitLoc", Util.locationToJsonArr(data.exitLoc));
+        out.put("gameType", data.gameType);
+        out.put("pos1", Util.blockVector3ToJsonArr(data.pos1));
+        out.put("pos2", Util.blockVector3ToJsonArr(data.pos2));
+        out.put("arenaSaved", data.arenaSaved);
+        out.put("spectatorLoc", Util.locationToJsonArr(data.spectatorLoc));
+        out.put("startPlatform1", Util.blockVector3ToJsonArr(data.startPos1));
+        out.put("startPlatform2", Util.blockVector3ToJsonArr(data.startPos2));
 
         // Write data to file
         try {
@@ -331,6 +317,7 @@ public class GameSetup {
 
     /**
      * Runs the load games command on all games and creates the game objects from data files
+     *
      * @param sender the player that issued the command
      */
     public static void loadAllGames(CommandSender sender) {
@@ -366,6 +353,7 @@ public class GameSetup {
 
     /**
      * Loads single game from the games folder
+     *
      * @param gameName the name of the game
      */
     public static void loadGame(String gameName) {
@@ -378,36 +366,28 @@ public class GameSetup {
             JSONObject object = (JSONObject) parser.parse(input);
 
             // Get the game type
-            String type = object.get("gameType").toString();
+            String name = object.get("name").toString();
 
-            // Create game based on data type and load specific attributes first
-            // Then cast to base class type
-            GameData data;
-            if (type.equals("deathmatch")) { //TODO: switch
-                DeathmatchData deathmatchData = new DeathmatchData(object.get("name").toString());
-                deathmatchData.spectatorLoc = Util.jsonArrToLocation("spectatorLoc", object);
-                deathmatchData.startPos1 = Util.jsonArrToBlockVector3("startPlatform1", object);
-                deathmatchData.startPos2 = Util.jsonArrToBlockVector3("startPlatform2", object);
-                deathmatchData.pos1 = Util.jsonArrToBlockVector3("pos1", object);
-                deathmatchData.pos2 = Util.jsonArrToBlockVector3("pos2", object);
-                deathmatchData.arenaSaved = object.get("arenaSaved").toString().equals("true");
-                data = deathmatchData;
-            }
-            else if (type.equals("parkour")) {
-                data = null; //TODO: add
-            }
-            else {
-                return;
-            }
+            // Create data object
+            GameData data = new GameData(name);
 
             // Load general attributes
+            data.gameType = GameData.stringToGameType(object.get("gameType").toString());
             data.enabled = object.get("enabled").toString().equals("true");
             data.lobby = Util.jsonArrToLocation("lobby", object);
             data.exitLoc = Util.jsonArrToLocation("exitLoc", object);
+            data.spectatorLoc = Util.jsonArrToLocation("spectatorLoc", object);
+            data.startPos1 = Util.jsonArrToBlockVector3("startPlatform1", object);
+            data.startPos2 = Util.jsonArrToBlockVector3("startPlatform2", object);
+            data.pos1 = Util.jsonArrToBlockVector3("pos1", object);
+            data.pos2 = Util.jsonArrToBlockVector3("pos2", object);
+            data.arenaSaved = object.get("arenaSaved").toString().equals("true");
+
+            // Add gameData to hashmap of games
             MikeyMinigames.data.gameData.put(data.name, data);
         } catch (ParseException e) {
             e.printStackTrace();
         }
     }
-    
+
 }

@@ -22,7 +22,7 @@ public class FunCommands implements CommandExecutor {
 
             if (args.length == 0) return false;
 
-            switch(args[0]) {
+            switch (args[0]) {
                 case "gaystick":
                     giveStick(player, args);
                     break;
@@ -32,7 +32,7 @@ public class FunCommands implements CommandExecutor {
                             final int num = Integer.parseInt(args[1]);
                             for (int i = 0; i < num; i++)
                                 spawnRandomFirework(player);
-                        } catch(NumberFormatException e) {
+                        } catch (NumberFormatException e) {
                             e.printStackTrace();
                         }
                     else spawnRandomFirework(player);
@@ -48,12 +48,10 @@ public class FunCommands implements CommandExecutor {
             player.sendMessage(ChatColor.RED + "Why do you have so many arguments >:(");
             player.sendMessage(ChatColor.RED + "Usage: /fun gaystick <level>");
             return;
-        }
-        else {
+        } else {
             try {
                 lvl = Integer.parseInt(args[1]);
-            }
-            catch (NumberFormatException n) {
+            } catch (NumberFormatException n) {
                 player.sendMessage(ChatColor.RED + "Invalid argument for " + ChatColor.GOLD + "<Knockback Level>");
                 return;
             }

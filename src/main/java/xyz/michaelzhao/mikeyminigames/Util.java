@@ -3,10 +3,12 @@ package xyz.michaelzhao.mikeyminigames;
 import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import xyz.michaelzhao.mikeyminigames.games.GameData;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,17 +19,20 @@ import java.util.Arrays;
 public class Util {
     /**
      * Returns the subfile path given a directory and filename
-     * @param parent the parent directory
+     *
+     * @param parent  the parent directory
      * @param subName the file name
      * @return String representing the file path
      */
     public static String getSubPath(File parent, String subName) {
         return parent.getPath() + System.getProperty("file.separator") + subName.replace(' ', '_');
     }
+
     /**
      * Opens the game file
+     *
      * @param parentFolder the parent directory of the file
-     * @param gameName the name of the game
+     * @param gameName     the name of the game
      * @return the file object
      */
     public static File getFileInDir(File parentFolder, String gameName) {
@@ -50,6 +55,7 @@ public class Util {
     /**
      * Parse all lines of a file and compile it into a string
      * for use by a JSONParser object
+     *
      * @param path the path of the file
      * @return String of concatenated file text
      */
@@ -71,8 +77,9 @@ public class Util {
 
     /**
      * Convert JSONArray to BlockVector3
+     *
      * @param attrib name of attribute to get
-     * @param obj JSONArray object
+     * @param obj    JSONArray object
      * @return BlockVector3 object
      */
     public static BlockVector3 jsonArrToBlockVector3(String attrib, JSONObject obj) {
@@ -82,6 +89,7 @@ public class Util {
 
     /**
      * Convert BlockVector3 to JSONArray
+     *
      * @param b BlockVector3 object
      * @return JSONArray object
      */
@@ -93,8 +101,9 @@ public class Util {
 
     /**
      * Convert JSONArray to Location
+     *
      * @param attrib name of attribute to get
-     * @param obj JSONArray object
+     * @param obj    JSONArray object
      * @return Location object
      */
     public static Location jsonArrToLocation(String attrib, JSONObject obj) {
@@ -106,6 +115,7 @@ public class Util {
 
     /**
      * Convert Location to JSONArray
+     *
      * @param l Location object
      * @return JSONArray object
      */
@@ -117,15 +127,16 @@ public class Util {
 
     /**
      * Checks the length of the arguments and prints the message to the player if incorrect
-     * @param args command arguments
+     *
+     * @param args          command arguments
      * @param correctLength correct length of arguments
-     * @param usage usage message to send player
-     * @param player the player that issued the command
+     * @param usage         usage message to send player
+     * @param sender        the sender that issued the command
      * @return if the argument was incorrect or not
      */
-    public static boolean isArgsIncorrectLength(String[] args, int correctLength, String usage, Player player) {
+    public static boolean isArgsIncorrectLength(String[] args, int correctLength, String usage, CommandSender sender) {
         if (args.length != correctLength) {
-            player.sendMessage(ChatColor.RED + "Usage: /" + usage);
+            sender.sendMessage(ChatColor.RED + "Usage: /" + usage);
             return true;
         }
         return false;
@@ -133,13 +144,14 @@ public class Util {
 
     /**
      * Checks to see if the game is invalid and prints the message to the player if invalid
+     *
      * @param gameName name of the game
-     * @param player the player that issued the command
+     * @param sender   the sender that issued the command
      * @return if the game was invalid or not
      */
-    public static boolean isInvalidGame(String gameName, Player player) {
+    public static boolean isInvalidGame(String gameName, CommandSender sender) {
         if (!MikeyMinigames.data.gameData.containsKey(gameName.toLowerCase())) {
-            player.sendMessage(ChatColor.RED + "Game " + gameName + " could not be found!");
+            sender.sendMessage(ChatColor.RED + "Game " + gameName + " could not be found!");
             return true;
         }
         return false;
@@ -147,8 +159,9 @@ public class Util {
 
     /**
      * Changes a Location object to a formatted string
+     *
      * @param label the label to put in front of the coordinate string
-     * @param v the Location object
+     * @param v     the Location object
      * @return the formatted string
      */
     public static String coordsToString(String label, Location v) {
@@ -157,10 +170,16 @@ public class Util {
 
     /**
      * Tests if the location is in default still (0, 0, 0)
+     *
      * @param l Location object
      * @return if location is not set
      */
     public static boolean isLocationNotSet(Location l) {
         return l.getX() == 0 && l.getY() == 0 && l.getZ() == 0;
+    }
+
+    // TODO: Add javadoc
+    public static GameData getData(String gameName) {
+        return MikeyMinigames.data.gameData.get(gameName.toLowerCase());
     }
 }
