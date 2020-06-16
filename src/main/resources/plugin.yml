@@ -3,6 +3,7 @@ main: xyz.michaelzhao.mikeyminigames.MikeyMinigames
 version: 15.0.10-SNAPSHOT
 author: Michael Zhao
 description: My first mc plugin!
+api-version: 1.15
 
 commands:
   fun:

@@ -3,8 +3,12 @@ package xyz.michaelzhao.mikeyminigames;
 import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -181,5 +185,20 @@ public class Util {
     // TODO: Add javadoc
     public static GameData getData(String gameName) {
         return MikeyMinigames.data.gameData.get(gameName.toLowerCase());
+    }
+
+    public static ItemStack createInventoryItem(Material type, int amount, String name, String ...lore) {
+        // Create item w/ type and amt
+        ItemStack item = new ItemStack(type);
+        item.setAmount(amount);
+
+        // Set meta
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(name);
+        if (lore != null) meta.setLore(Arrays.asList(lore));
+        item.setItemMeta(meta);
+
+        // Return the item
+        return item;
     }
 }

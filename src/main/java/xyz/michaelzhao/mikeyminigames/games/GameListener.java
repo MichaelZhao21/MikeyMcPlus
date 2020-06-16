@@ -1,10 +1,9 @@
 package xyz.michaelzhao.mikeyminigames.games;
 
-import com.sk89q.worldedit.math.BlockVector3;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Pose;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -25,22 +24,29 @@ public class GameListener implements Listener {
         if (item != null &&
                 item.getType() == Material.BLAZE_ROD &&
                 item.getItemMeta() != null &&
-                item.getItemMeta().getDisplayName().equals(ChatColor.GOLD + "Minigame Tool") &&
-                (action.equals(Action.RIGHT_CLICK_BLOCK) || action.equals(Action.LEFT_CLICK_BLOCK))) {
-            Block block = event.getClickedBlock();
-            if (block == null) return;
-            int x = block.getX();
-            int y = block.getY();
-            int z = block.getZ();
-            GameData toolData = MikeyMinigames.data.gameData.get(MikeyMinigames.data.toolGame);
-            if (action.equals(Action.LEFT_CLICK_BLOCK)) {
-                event.setCancelled(true);
-                player.sendMessage(String.format("%sPos1 set to: (%d, %d, %d)", ChatColor.LIGHT_PURPLE, x, y, z));
-                toolData.pos1 = BlockVector3.at(x, y, z);
-            } else {
-                player.sendMessage(String.format("%sPos2 set to: (%d, %d, %d)", ChatColor.LIGHT_PURPLE, x, y, z));
-                toolData.pos2 = BlockVector3.at(x, y, z);
+                item.getItemMeta().getDisplayName().equals(ChatColor.GOLD + "Minigame Tool")) {
+
+            // Sneak click to open inventory
+            if (player.getPose() == Pose.SNEAKING && (action.equals(Action.RIGHT_CLICK_AIR) || action.equals(Action.LEFT_CLICK_AIR))) {
+                // Create tool inventory class with game name
+                MikeyMinigames.data.toolInventory = new ToolInventory(item.getItemMeta().getLore().get(0));
+                player.openInventory(MikeyMinigames.data.toolInventory.inventory);
+
+                // Register event listener
+                MikeyMinigames.instance.getServer().getPluginManager().registerEvents(MikeyMinigames.data.toolInventory, MikeyMinigames.instance);
+                return;
             }
+
+            // TODO: write else desc
+
+            // Get tool mode
+            ToolMode mode = MikeyMinigames.data.toolInventory.toolMode;
+
+            // Run corners or position setting
+            if (mode == ToolMode.ARENA || mode == ToolMode.SPAWN_PLATFORM)
+                GameSetup.setCorners(player, action, event);
+            else
+                GameSetup.setPos(MikeyMinigames.data.toolInventory.toolMode, action, player);
         }
     }
 

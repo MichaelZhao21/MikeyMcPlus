@@ -1,5 +1,6 @@
 package xyz.michaelzhao.mikeyminigames;
 
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import xyz.michaelzhao.mikeyminigames.games.*;
@@ -39,8 +40,9 @@ public class MikeyMinigames extends JavaPlugin {
         super.onDisable();
 
         // Remove all players from games
-        for (Player p : data.playersInGameList.keySet())
+        for (Player p : data.playersInGameList.keySet()) {
             GameEngine.quit(p);
+        }
 
         // Saves all games to a file
         GameSetup.saveAllGames(getServer().getConsoleSender());

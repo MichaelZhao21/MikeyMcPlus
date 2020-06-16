@@ -7,6 +7,7 @@ import xyz.michaelzhao.mikeyminigames.MikeyMinigames;
 import xyz.michaelzhao.mikeyminigames.Util;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 enum DeathType {NONE, FALLING, HEALTH}
@@ -16,11 +17,13 @@ enum GameState {LOBBY, RUNNING, STOPPED}
 enum GameType {NONE, MULTIPLAYER, TEAM, SINGLEPLAYER}
 
 public class GameData {
+    public boolean hasArena, hasLobby, hasCheckpoints, hasSpawnPlatform, hasSpectators;
     public Location lobby, exitLoc;
     public String name;
     public boolean enabled;
     public HashMap<String, Player> gamePlayers;
     public HashMap<String, PlayerGameData> gamePlayerObjects;
+    public ArrayList<Location> checkpoints;
     public DeathType deathType;
     public File gameFolder;
     public BlockVector3 startPos1, startPos2;
@@ -31,7 +34,6 @@ public class GameData {
     public boolean arenaSaved;
     public BlockVector3 pos1, pos2;
     public GameType gameType;
-    public boolean hasArena;
 
     public GameData(String name) {
         this.name = name;
@@ -52,7 +54,14 @@ public class GameData {
         this.timerId = 0;
         this.gameState = GameState.STOPPED;
         this.gameType = GameType.NONE;
+
         this.hasArena = false;
+        this.hasLobby = false;
+        this.hasSpawnPlatform = false;
+        this.hasCheckpoints = false;
+        this.hasSpectators = false;
+
+        this.checkpoints = new ArrayList<>();
     }
 
     // TODO: javadoc

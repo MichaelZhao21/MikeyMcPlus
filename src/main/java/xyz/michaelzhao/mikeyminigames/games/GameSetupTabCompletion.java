@@ -9,12 +9,17 @@ import java.util.Arrays;
 import java.util.List;
 
 public class GameSetupTabCompletion implements TabCompleter {
+
+    public String[] arg0List;
+
+    public GameSetupTabCompletion() {
+        this.arg0List = new String[]{"help", "add", "remove", "join", "quit"};
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender commandSender, Command command, String s, String[] args) {
         if (command.getName().equalsIgnoreCase("games") && args.length == 1 && commandSender instanceof Player) {
-            return Arrays.asList("add", "list", "arena", "load",
-                    "save", "tool", "enable", "api", "setpos",
-                    "join", "quit");
+            return Arrays.asList(arg0List);
         }
         // TODO: add advanced tab complete
         return null;

@@ -34,63 +34,38 @@ public class GameEngine { // TODO add change game type
 
         // Get the current game as the base class
         GameData data = Util.getData(args[1]);
-
-        // Check to make sure game type is set
-        if (data.gameType == GameType.NONE) {
-            sender.sendMessage(ChatColor.RED + "Game type not set");
-            return;
-        }
-
-        // Define general conditions and errors
-        boolean[] generalConditions = new boolean[]{
-                Util.isLocationNotSet(data.lobby),
-                Util.isLocationNotSet(data.exitLoc)
-        };
-        String[] generalErrors = new String[]{
-                "Lobby not set",
-                "Exit location not set"
-        };
-
-        // Define hashmap of specific conditions and errors
-        HashMap<GameType, boolean[]> specialConditions = new HashMap<>();
-        HashMap<GameType, String[]> specialErrors = new HashMap<>();
-
-        // Deathmatch Conditions
-        specialConditions.put(GameType.MULTIPLAYER, new boolean[]{
-                !data.arenaSaved,
-                data.startPos1.equals(blockNotSet) || data.startPos2.equals(blockNotSet),
-                Util.isLocationNotSet(data.spectatorLoc)
-        });
-        specialErrors.put(GameType.MULTIPLAYER, new String[]{
-                "Arena not saved",
-                "Starting platform (2 corners) not set",
-                "Spectator location not set"
-        });
+//
+//        // Check to make sure game type is set
+//        if (data.gameType == GameType.NONE) {
+//            sender.sendMessage(ChatColor.RED + "Game type not set");
+//            return;
+//        }
 
         // Make variable to check for errors
         boolean noError = true;
 
-        // Loop through general conditions and print error if true
-        for (int i = 0; i < generalConditions.length; i++) {
-            if (generalConditions[i]) {
-                sender.sendMessage(ChatColor.RED + generalErrors[i]);
-                noError = false;
-            }
-        }
-
-        // Loop through specific conditions and print error if true
-        for (int i = 0; i < specialConditions.get(data.gameType).length; i++) {
-            if (specialConditions.get(data.gameType)[i]) {
-                sender.sendMessage(ChatColor.RED + specialErrors.get(data.gameType)[i]);
-                noError = false;
-            }
-        }
+        if (enableError(Util.isLocationNotSet(data.exitLoc), "Exit location not set", sender)) noError = false;
+        if (data.hasLobby)
+            if (enableError(Util.isLocationNotSet(data.lobby), "Lobby not set", sender)) noError = false;
+        if (data.hasArena)
+            if (enableError(data.pos1.equals(blockNotSet) || data.pos2.equals(blockNotSet), "Arena bounds not set", sender)) noError = false;
+        if (data.hasSpawnPlatform)
+            if (enableError(data.startPos1.equals(blockNotSet) || data.startPos2.equals(blockNotSet), "Starting platform not set", sender)) noError = false;
+        if (data.hasSpectators)
+            if (enableError(Util.isLocationNotSet(data.spectatorLoc), "Spectator spawn position not set", sender)) noError = false;
+        if (data.hasCheckpoints)
+            if (enableError(data.checkpoints.size() < 2, "You must set at least 2 checkpoints (start and end)", sender)) noError = false;
 
         // Enable if there were no errors
         if (noError) {
-            Util.getData(MikeyMinigames.data.toolGame).enabled = true;
-            sender.sendMessage(ChatColor.GOLD + MikeyMinigames.data.toolGame + " enabled!");
+            Util.getData(args[1]).enabled = true;
+            sender.sendMessage(ChatColor.GOLD + args[1] + " enabled!");
         }
+    }
+
+    public static boolean enableError(boolean condition, String errorMessage, CommandSender sender) {
+        if (condition) sender.sendMessage(errorMessage);
+        return condition;
     }
 
     /**
@@ -101,11 +76,12 @@ public class GameEngine { // TODO add change game type
      */
     public static void disableGame(Player player, String[] args) {
         // Check args
-        if (Util.isArgsIncorrectLength(args, 1, "games disable", player)) return;
+        if (Util.isArgsIncorrectLength(args, 2, "games disable <Game Name>", player)) return;
+        if (Util.isInvalidGame(args[1], player)) return;
 
         // Disable the game and send player message
-        Util.getData(MikeyMinigames.data.toolGame).enabled = false;
-        player.sendMessage(ChatColor.GOLD + MikeyMinigames.data.toolGame + " disabled");
+        Util.getData(args[1]).enabled = false;
+        player.sendMessage(ChatColor.GOLD + args[1] + " disabled");
     }
 
     /**

@@ -46,9 +46,6 @@ public class GameCommands implements CommandExecutor {
                     GameEngine.giveKit("spleef", player);
 //                    GameEngine.kit(player, args);
                     break;
-                case "setpos":
-                    GameSetup.setPos(player, args);
-                    break;
                 case "info":
                     GameEngine.info(player, args);
                     break;
